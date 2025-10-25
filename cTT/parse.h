@@ -2,11 +2,15 @@
 #define PARSE_H
 
 #include "lex.h"
+#include "list.h"
 
 typedef struct Parser {
 	Lexer *lex;
 	Token *curToken;
 	Token *peekToken;
+	List *symbols;
+	List *labelsDeclared;
+	List *labelsGotoed;
 } Parser;	
 
 Parser *Parser_create(Lexer *lex);
@@ -34,5 +38,7 @@ void Parser_unary(Parser *par);
 void Parser_primary(Parser *par);
 
 void Parser_nl(Parser *par);
+
+int List_contains(List *l, char *word);
 
 #endif

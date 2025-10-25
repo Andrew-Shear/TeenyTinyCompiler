@@ -10,6 +10,32 @@ Parser *Parser_create(Lexer *lex) {
 		printf("Unable to allocate memory for parser.\n");
 		exit(1);
 	}
+
+	par->symbols = List_create();
+	if (par->symbols == NULL) {
+		Lexer_kill(lex);
+		free(par);
+		printf("Unable to allocate memory for symbols list.\n");
+		exit(1);
+	}
+
+	par->labelsDeclared = List_create();
+	if (par->labelsDeclared == NULL) {
+		Lexer_kill(lex);
+		free(par);
+		free(par->symbols);
+		printf("Unable to allocate memory for labelsDeclared list.\n");
+		exit(1);
+	}
+	par->labelsGotoed = List_create();
+	if (par->labelsGotoed == NULL) {
+		Lexer_kill(lex);
+		free(par);
+		free(par->symbols);
+		free(par->labelsDeclared);
+		printf("Unable to allocate memory for labelsGotoed list.\n");
+		exit(1);
+	}
 	
 	par->lex = lex;
 	par->curToken = Lexer_getToken(lex);
@@ -19,9 +45,18 @@ Parser *Parser_create(Lexer *lex) {
 
 void Parser_kill(Parser *par) {
 	Lexer_kill(par->lex);
+	printf("killed lexer.\n");
 	Token_kill(par->curToken);
 	Token_kill(par->peekToken);
+	printf("killed tokens.\n");
+	List_clear_destroy(par->symbols);
+	printf("killed symbols list.\n");
+	List_clear_destroy(par->labelsDeclared);
+	printf("killed declared list.\n");
+	List_clear_destroy(par->labelsGotoed);
+	printf("killed gotoed list.\n");
 	free(par);
+	printf("killed parser.\n");
 }
 
 void Parser_nextToken(Parser *par) {
@@ -47,9 +82,19 @@ void Parser_match(Parser *par, TokenType type) {
 
 void Parser_program(Parser *par) {
 	printf("PROGRAM\n");
+	
+	while (par->curToken->type == NEWLINE) {
+		Parser_nextToken(par);
+	}
 
 	while (par->curToken->type != eOF) {
 		Parser_statement(par);
+	}
+
+	LIST_FOREACH(par->labelsGotoed, first, next, cur) {
+		if (!(List_contains(par->labelsDeclared, (char *) cur->value))) {
+			Parser_abort(par, "Attempted to GOTO an undeclared label.");
+		}
 	}
 }
 
@@ -98,18 +143,26 @@ void Parser_statement(Parser *par) {
 		case LABEL:
 			printf("STATEMENT-LABEL\n");
 			Parser_nextToken(par);
+			if (List_contains(par->labelsDeclared, par->curToken->text))
+				Parser_abort(par, "Label declared twice.");
+			List_push(par->labelsDeclared, strdup(par->curToken->text));
 			Parser_match(par, IDENT);
 			break;
 
 		case GOTO:
 			printf("STATEMENT-GOTO\n");
 			Parser_nextToken(par);
+			List_push(par->labelsGotoed, strdup(par->curToken->text));
 			Parser_match(par, IDENT);
 			break;
 
 		case LET:
 			printf("STATEMENT-LET\n");
 			Parser_nextToken(par);
+			if (!(List_contains(par->symbols, par->curToken->text))) {
+				List_push(par->symbols, strdup(par->curToken->text));
+			}
+
 			Parser_match(par, IDENT);
 			Parser_match(par, EQ);
 			Parser_expression(par);
@@ -118,6 +171,9 @@ void Parser_statement(Parser *par) {
 		case INPUT:
 			printf("STATEMENT-INPUT\n");
 			Parser_nextToken(par);
+			if (!(List_contains(par->symbols, par->curToken->text))) {
+				List_push(par->symbols, strdup(par->curToken->text));
+			}
 			Parser_match(par, IDENT);
 			break;
 		
@@ -191,6 +247,9 @@ void Parser_primary(Parser *par) {
 	if (par->curToken->type == NUMBER) {
 		Parser_nextToken(par);
 	} else if (par->curToken->type == IDENT) {
+		if (!(List_contains(par->symbols, par->curToken->text))) {
+			Parser_abort(par, "Referenced variable before assignment.");
+		}
 		Parser_nextToken(par);
 	} else {
 		Parser_abort(par, "Unexpected token in primary.");
@@ -204,5 +263,21 @@ void Parser_nl(Parser *par) {
 	while (par->curToken->type == NEWLINE) {
 		Parser_nextToken(par);
 	}
+}
+
+int List_contains(List *l, char *word) {
+	if (l->first == NULL)
+		return 0;
+	if (l->first == l->last)
+		return strcmp((char *) l->first->value, word) == 0;
+
+	ListNode *n = l->first;
+	while (n != NULL) {
+		if (strcmp((char *) n->value, word) == 0) {
+			return 1;
+		}
+		n = n->next;
+	}
+	return 0;
 }
 
