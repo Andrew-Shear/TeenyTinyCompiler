@@ -63,32 +63,32 @@ Token *Lexer_getToken(Lexer *lex) {
 	switch (lex->curChar) {
 
 		case '+':
-			t->text = "+";
+			t->text = strdup("+");
 			t->type = PLUS;
 			break;
 
 		case '-':
-			t->text = "-";
+			t->text = strdup("-");
 			t->type = MINUS;
 			break;
 			
 		case '*':
-			t->text = "*";
+			t->text = strdup("*");
 			t->type = ASTERISK;
 			break;
 
 		case '/':
-			t->text = "/";
+			t->text = strdup("/");
 			t->type = SLASH;
 			break;
 
 		case '=':
 			if (lex->nextChar == '=') {
 				Lexer_nextChar(lex);
-				t->text = "==";
+				t->text = strdup("==");
 				t->type = EQEQ;
 			} else {
-				t->text = "=";
+				t->text = strdup("=");
 				t->type = EQ;
 			}
 			break;
@@ -96,10 +96,10 @@ Token *Lexer_getToken(Lexer *lex) {
 		case '>':
 			if (lex->nextChar == '=') {
 				Lexer_nextChar(lex);
-				t->text = ">=";
+				t->text = strdup(">=");
 				t->type = GTEQ;
 			} else {
-				t->text = ">";
+				t->text = strdup(">");
 				t->type = GT;
 			}
 			break;
@@ -107,10 +107,10 @@ Token *Lexer_getToken(Lexer *lex) {
 		case '<':
 			if (lex->nextChar == '=') {
 				Lexer_nextChar(lex);
-				t->text = "<=";
+				t->text = strdup("<=");
 				t->type = LTEQ;
 			} else {
-				t->text = "<";
+				t->text = strdup("<");
 				t->type = LT;
 			}
 			break;
@@ -118,7 +118,7 @@ Token *Lexer_getToken(Lexer *lex) {
 		case '!':
 			if (lex->nextChar == '=') {
 				Lexer_nextChar(lex);
-				t->text = "!=";
+				t->text = strdup("!=");
 				t->type = NOTEQ;
 			} else {
 				Lexer_abort(lex, t, "Expected !=, got !");
@@ -131,12 +131,12 @@ Token *Lexer_getToken(Lexer *lex) {
 			break;
 
 		case '\n':
-			t->text = "\n";
+			t->text = strdup("\n");
 			t->type = NEWLINE;
 			break;
 
 		case '\0':
-			t->text = "";
+			t->text = strdup("");
 			t->type = eOF;
 			break;
 
@@ -147,7 +147,7 @@ Token *Lexer_getToken(Lexer *lex) {
 				Lexer_readSymbol(lex, t);   
 			} else {
 				printf("unknown character: %c\n", lex->curChar);
-				t->text = "";
+				t->text = strdup("");
 				t->type = 0;
 			}
 	}
@@ -157,6 +157,7 @@ Token *Lexer_getToken(Lexer *lex) {
 }
 
 void Token_kill(Token *t) {
+	free(t->text);
 	free(t);
 }
 
@@ -180,7 +181,7 @@ void Lexer_readString(Lexer *lex, Token *t) {
 	// to be two characters further.
 	fgetc(lex->source);
 	fgetc(lex->source);
-	t->text = text;
+	t->text = strdup(text);
 	t->type = STRING;
 }
 
@@ -210,7 +211,7 @@ void Lexer_readNumber(Lexer *lex, Token *t) {
 	fgets(num, endPos-startPos+2, lex->source);
 	// now, the pointer is pointing to the character after, so we have to move one forward.
 	fgetc(lex->source);
-	t->text = num;
+	t->text = strdup(num);
 	t->type = NUMBER;
 }
 
@@ -230,7 +231,7 @@ void Lexer_readSymbol(Lexer *lex, Token *t) {
 	fgets(text, endPos-startPos+2, lex->source);
 	// now, the pointer is pointing to the character after, so we have to move one forward.
 	fgetc(lex->source);
-	t->text = text;
+	t->text = strdup(text);
 	t->type = Lexer_getKeyword(text);
 }
 

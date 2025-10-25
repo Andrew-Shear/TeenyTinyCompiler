@@ -1,4 +1,4 @@
 CFLAGS = -g -Wall
 
 all:
-	$(CC) teenytiny.c lex.c parse.c emit.c -o teenytiny
+	$(CC) teenytiny.c parse.c lex.c emit.c -o teenytiny

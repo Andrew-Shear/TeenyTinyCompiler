@@ -1,14 +1,2 @@
-+-"This is a string"+"String #2""String #3"+-
-3+3+3+3+3+3
-3 + 3 + 3 + 3 + 3 + 3
-55.6+77.3=15
-
-
-
-LET foo = bar
-LABEL world
-GOTO world
-
-
-
-foo=bar+bar+bar
+PRINT index
+GOTO main
