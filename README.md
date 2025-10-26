@@ -3,4 +3,5 @@ Inspired by Austin Z. Henley's "Let's make a Teeny Tiny compiler" project. I ini
 To run:
 
 `make compile` -- if you've altered the source files.
+
 `make all` -- compiles all .teeny files in examples or in the main src folder.
