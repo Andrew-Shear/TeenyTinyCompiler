@@ -10,6 +10,6 @@ compile:
 	$(CC) src/teenytiny.c src/parse.c src/lex.c src/emit.c src/list.c -o src/teenytiny
 
 $(TEENYS):
-	src/teenytiny $@
-	$(CC) out.c -o $(notdir $(patsubst %.teeny,%,$@))
+	@src/teenytiny $@
+	@$(CC) out.c -o $(notdir $(patsubst %.teeny,%,$@))
 	

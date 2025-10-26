@@ -6,6 +6,7 @@ typedef struct Lexer {
 	FILE *source;
 	char curChar;
 	char nextChar;
+	int lineNumber;
 } Lexer;
 
 enum TokenType;

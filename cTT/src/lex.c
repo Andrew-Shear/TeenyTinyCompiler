@@ -9,6 +9,7 @@ Lexer *Lexer_create(FILE *source) {
 	lex->source = source;
 	lex->curChar = ' ';
 	lex->nextChar = ' ';
+	lex->lineNumber = 1;
 
 	Lexer_nextChar(lex);
 	Lexer_nextChar(lex);
@@ -35,6 +36,7 @@ char Lexer_peek(Lexer *lex) {
 }
 
 void Lexer_abort(Lexer *lex, Token *t, char *message) {
+	printf("ERROR AT LINE #%d:\n", lex->lineNumber);
 	printf(message);
 	printf("\n");
 	Lexer_kill(lex);
@@ -133,6 +135,7 @@ Token *Lexer_getToken(Lexer *lex) {
 		case '\n':
 			t->text = strdup("\n");
 			t->type = NEWLINE;
+			lex->lineNumber++;
 			break;
 
 		case '\0':

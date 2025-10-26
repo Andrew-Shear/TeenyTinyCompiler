@@ -6,12 +6,12 @@
 #include "lex.h"
 
 int main(int argc, char *argv[]) {
-	printf("Teeny Tiny Compiler\n");
-
 	if (argc != 2) {
 		printf("Must give a file to compile.\n");
 		exit(1);
 	}
+	printf("Compiling %s...\n", argv[1]);
+
 	FILE *teenytinyFile = fopen(argv[1], "r");
 	if (teenytinyFile == NULL) {
 		printf("File could not be opened.\n");
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 	
 	Parser_program(par);
 	Emitter_writeFile(emit);
-	printf("Compiling completed.\n");
+	printf("Compiling completed.\n\n");
 
 	Parser_kill(par);
 	return 0;

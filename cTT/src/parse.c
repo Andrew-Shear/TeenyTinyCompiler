@@ -61,6 +61,7 @@ void Parser_nextToken(Parser *par) {
 }
 
 void Parser_abort(Parser *par, char *message) {
+	printf("ERROR AT LINE #%d:\n", par->lex->lineNumber);
 	printf(message);
 	printf("\n");
 	Lexer_kill(par->lex);

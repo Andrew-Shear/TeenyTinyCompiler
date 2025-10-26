@@ -1,1 +1,5 @@
 pythonTT/__pycache__/
+out.c
+.header
+.code
+*.exe
