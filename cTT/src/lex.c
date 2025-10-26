@@ -164,7 +164,7 @@ void Token_kill(Token *t) {
 void Lexer_readString(Lexer *lex, Token *t) {
 	// lex->nextChar is the first character in the string.
 	// startPos is the index of the first character in the string.
-	long startPos = ftell(lex->source)-1;
+	long startPos = ftell(lex->source)-2;
 
 	while (lex->curChar != '\"') {
 		if (lex->curChar == '\r' || lex->curChar == '\n' || lex->curChar == '\t' || lex->curChar == '\\' || lex->curChar == '%') {

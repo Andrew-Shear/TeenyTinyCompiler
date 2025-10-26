@@ -3,9 +3,11 @@
 
 #include "lex.h"
 #include "list.h"
+#include "emit.h"
 
 typedef struct Parser {
 	Lexer *lex;
+	Emitter *emit;
 	Token *curToken;
 	Token *peekToken;
 	List *symbols;
@@ -13,7 +15,7 @@ typedef struct Parser {
 	List *labelsGotoed;
 } Parser;	
 
-Parser *Parser_create(Lexer *lex);
+Parser *Parser_create(Lexer *lex, Emitter *emit);
 
 void Parser_kill(Parser *par);
 

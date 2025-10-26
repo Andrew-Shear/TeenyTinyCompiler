@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "parse.h"
 
-Parser *Parser_create(Lexer *lex) {
+Parser *Parser_create(Lexer *lex, Emitter *emit) {
 	Parser *par = malloc(sizeof(Parser));
 	if (par == NULL) {
 		Lexer_kill(lex);
@@ -38,6 +38,7 @@ Parser *Parser_create(Lexer *lex) {
 	}
 	
 	par->lex = lex;
+	par->emit = emit;
 	par->curToken = Lexer_getToken(lex);
 	par->peekToken = Lexer_getToken(lex);
 	return par;
@@ -45,18 +46,12 @@ Parser *Parser_create(Lexer *lex) {
 
 void Parser_kill(Parser *par) {
 	Lexer_kill(par->lex);
-	printf("killed lexer.\n");
 	Token_kill(par->curToken);
 	Token_kill(par->peekToken);
-	printf("killed tokens.\n");
 	List_clear_destroy(par->symbols);
-	printf("killed symbols list.\n");
 	List_clear_destroy(par->labelsDeclared);
-	printf("killed declared list.\n");
 	List_clear_destroy(par->labelsGotoed);
-	printf("killed gotoed list.\n");
 	free(par);
-	printf("killed parser.\n");
 }
 
 void Parser_nextToken(Parser *par) {
@@ -69,6 +64,7 @@ void Parser_abort(Parser *par, char *message) {
 	printf(message);
 	printf("\n");
 	Lexer_kill(par->lex);
+	Emitter_kill(par->emit);
 	Parser_kill(par);
 	exit(1);
 }	
@@ -81,7 +77,8 @@ void Parser_match(Parser *par, TokenType type) {
 }
 
 void Parser_program(Parser *par) {
-	printf("PROGRAM\n");
+	Emitter_headerLine(par->emit, "#include <stdio.h>");
+	Emitter_headerLine(par->emit, "int main (void) {");
 	
 	while (par->curToken->type == NEWLINE) {
 		Parser_nextToken(par);
@@ -90,6 +87,9 @@ void Parser_program(Parser *par) {
 	while (par->curToken->type != eOF) {
 		Parser_statement(par);
 	}
+
+	Emitter_emitLine(par->emit, "return 0;");
+	Emitter_emitLine(par->emit, "}");
 
 	LIST_FOREACH(par->labelsGotoed, first, next, cur) {
 		if (!(List_contains(par->labelsDeclared, (char *) cur->value))) {
@@ -101,79 +101,113 @@ void Parser_program(Parser *par) {
 void Parser_statement(Parser *par) {
 	switch (par->curToken->type) {
 		case PRINT:
-			printf("STATEMENT-PRINT\n");
 			Parser_nextToken(par);
 			if (par->curToken->type == STRING) {
+				Emitter_emit(par->emit, "printf(\"");
+				Emitter_emit(par->emit, par->curToken->text);
+				Emitter_emitLine(par->emit, "\\n\");");
 				Parser_nextToken(par);
 			} else {
+				Emitter_emit(par->emit, "printf(\"%");
+				Emitter_emit(par->emit, ".2f\\n\", (float)(");
 				Parser_expression(par);
+				Emitter_emitLine(par->emit, "));");
 			}
 			break;
 			
 		case IF:
-			printf("STATEMENT-IF\n");
 			Parser_nextToken(par);
+			Emitter_emit(par->emit, "if(");
 			Parser_comparison(par);
 
 			Parser_match(par, THEN);
 			Parser_nl(par);
+			Emitter_emitLine(par->emit, "){");
 
 			while (par->curToken->type != ENDIF) {
 				Parser_statement(par);
 			}
 
 			Parser_match(par, ENDIF);
+			Emitter_emitLine(par->emit, "}");
 			break;
 		
 		case WHILE:
-			printf("STATEMENT-WHILE\n");
 			Parser_nextToken(par);
+			Emitter_emit(par->emit, "while(");
 			Parser_comparison(par);
 
 			Parser_match(par, REPEAT);
 			Parser_nl(par);
+			Emitter_emitLine(par->emit, "){");
 
 			while (par->curToken->type != ENDWHILE) {
 				Parser_statement(par);
 			}
 
 			Parser_match(par, ENDWHILE);
+			Emitter_emitLine(par->emit, "}");
 			break;
 			
 		case LABEL:
-			printf("STATEMENT-LABEL\n");
 			Parser_nextToken(par);
 			if (List_contains(par->labelsDeclared, par->curToken->text))
 				Parser_abort(par, "Label declared twice.");
 			List_push(par->labelsDeclared, strdup(par->curToken->text));
+
+			Emitter_emit(par->emit, par->curToken->text);
+			Emitter_emitLine(par->emit, ":");
 			Parser_match(par, IDENT);
 			break;
 
 		case GOTO:
-			printf("STATEMENT-GOTO\n");
 			Parser_nextToken(par);
 			List_push(par->labelsGotoed, strdup(par->curToken->text));
+			Emitter_emit(par->emit, "goto ");
+			Emitter_emit(par->emit, par->curToken->text);
+			Emitter_emitLine(par->emit, ";");
 			Parser_match(par, IDENT);
 			break;
 
 		case LET:
-			printf("STATEMENT-LET\n");
 			Parser_nextToken(par);
+
 			if (!(List_contains(par->symbols, par->curToken->text))) {
 				List_push(par->symbols, strdup(par->curToken->text));
+				Emitter_header(par->emit, "float ");
+				Emitter_header(par->emit, par->curToken->text);
+				Emitter_headerLine(par->emit, ";");
 			}
+
+			Emitter_emit(par->emit, par->curToken->text);
+			Emitter_emit(par->emit, " = ");
 
 			Parser_match(par, IDENT);
 			Parser_match(par, EQ);
 			Parser_expression(par);
+			Emitter_emitLine(par->emit, ";");
 			break;
 
 		case INPUT:
-			printf("STATEMENT-INPUT\n");
 			Parser_nextToken(par);
+			
 			if (!(List_contains(par->symbols, par->curToken->text))) {
 				List_push(par->symbols, strdup(par->curToken->text));
+				Emitter_header(par->emit, "float ");
+				Emitter_header(par->emit, par->curToken->text);
+				Emitter_headerLine(par->emit, ";");
 			}
+			
+			Emitter_emit(par->emit, "if(0 == scanf(\"%");
+			Emitter_emit(par->emit, "f\", &");
+			Emitter_emit(par->emit, par->curToken->text);
+			Emitter_emitLine(par->emit, ")) {");
+			Emitter_emit(par->emit, par->curToken->text);
+			Emitter_emitLine(par->emit, " = 0;");
+			Emitter_emit(par->emit, "scanf(\"%");
+			Emitter_emitLine(par->emit, "*s\");");
+			Emitter_emitLine(par->emit, "}");
+
 			Parser_match(par, IDENT);
 			break;
 		
@@ -184,8 +218,6 @@ void Parser_statement(Parser *par) {
 }
 
 void Parser_comparison(Parser *par) {
-	printf("COMPARISON\n");
-
 	Parser_expression(par);
 	if (par->curToken->type == GT   ||
 		par->curToken->type == GTEQ ||
@@ -193,6 +225,7 @@ void Parser_comparison(Parser *par) {
 		par->curToken->type == LTEQ ||
 		par->curToken->type == EQEQ ||
 		par->curToken->type == NOTEQ) {
+		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
 		Parser_expression(par);
 	} else {
@@ -205,51 +238,47 @@ void Parser_comparison(Parser *par) {
 		par->curToken->type == LTEQ ||
 		par->curToken->type == EQEQ ||
 		par->curToken->type == NOTEQ) {
+		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
 		Parser_expression(par);
 	}
 }
 
 void Parser_expression(Parser *par) {
-	printf("EXPRESSION\n");
-
 	Parser_term(par);
 	while (par->curToken->type == PLUS || par->curToken->type == MINUS) {
+		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
 		Parser_term(par);
 	}
 }
 
 void Parser_term(Parser *par) {
-	printf("TERM\n");
-
 	Parser_unary(par);
 	while (par->curToken->type == ASTERISK || par->curToken->type == SLASH) {
+		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
 		Parser_unary(par);
 	}
 }
 
 void Parser_unary(Parser *par) {
-	printf("UNARY\n");
-
 	if (par->curToken->type == PLUS || par->curToken->type == MINUS) {
+		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
 	}
 	Parser_primary(par);
 }
 
 void Parser_primary(Parser *par) {
-	printf("PRIMARY (");
-	printf(par->curToken->text);
-	printf(")\n");
-
 	if (par->curToken->type == NUMBER) {
+		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
 	} else if (par->curToken->type == IDENT) {
 		if (!(List_contains(par->symbols, par->curToken->text))) {
 			Parser_abort(par, "Referenced variable before assignment.");
 		}
+		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
 	} else {
 		Parser_abort(par, "Unexpected token in primary.");
@@ -257,8 +286,6 @@ void Parser_primary(Parser *par) {
 }
 
 void Parser_nl(Parser *par) {
-	printf("NEWLINE\n");
-
 	Parser_match(par, NEWLINE);
 	while (par->curToken->type == NEWLINE) {
 		Parser_nextToken(par);
