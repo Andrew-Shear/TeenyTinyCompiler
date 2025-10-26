@@ -5,3 +5,5 @@ To run:
 `make compile` -- if you've altered the source files.
 
 `make all` -- compiles all .teeny files in examples or in the main src folder.
+
+Then all .teeny files will be executables. Enjoy!
