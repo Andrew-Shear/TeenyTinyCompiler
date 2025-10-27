@@ -2,11 +2,17 @@ LET a = 0
 WHILE a < 1 REPEAT
     PRINT "Enter number of scores: "
     INPUT a
+	IF a < 0 THEN
+		PRINT "Number of scores must be positive."
+	ELSEIF a == 0 THEN
+		PRINT "Number of scores must not be zero."
+	ELSE
+		PRINT "Enter one value at a time: "
+	ENDIF
 ENDWHILE
 
 LET b = 0
 LET s = 0
-PRINT "Enter one value at a time: "
 WHILE b < a REPEAT
     INPUT c
     LET s = s + c

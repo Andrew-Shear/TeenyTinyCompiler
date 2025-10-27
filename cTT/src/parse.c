@@ -101,7 +101,7 @@ void Parser_program(Parser *par) {
 }
 
 // statement ::= "PRINT" (expression | string) nl
-//     | "IF" comparison "THEN" nl {statement} "ENDIF" nl
+//     | "IF" comparison "THEN" nl {statement} {"ELSEIF" comparison "THEN" nl {statement}} [ELSE nl {statement}] "ENDIF" nl
 //     | "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
 //     | "LABEL" ident nl
 //     | "GOTO" ident nl
@@ -133,8 +133,32 @@ void Parser_statement(Parser *par) {
 			Parser_nl(par);
 			Emitter_emitLine(par->emit, "){");
 
-			while (par->curToken->type != ENDIF) {
+			while (par->curToken->type != ENDIF && par->curToken->type != ELSEIF && par->curToken->type != ELSE) {
 				Parser_statement(par);
+			}
+			
+			while (par->curToken->type == ELSEIF) {
+				Parser_nextToken(par);
+				Emitter_emit(par->emit, "} else if (");
+				Parser_comparison(par);
+
+				Parser_match(par, THEN);
+				Parser_nl(par);
+				Emitter_emitLine(par->emit, ") {");
+
+				while (par->curToken->type != ENDIF && par->curToken->type != ELSEIF && par->curToken->type != ELSE) {
+					Parser_statement(par);
+				}
+			}
+
+			if (par->curToken->type == ELSE) {
+				Parser_nextToken(par);
+				Parser_nl(par);
+				Emitter_emitLine(par->emit, "} else {");
+
+				while (par->curToken->type != ENDIF) {
+					Parser_statement(par);
+				}
 			}
 
 			Parser_match(par, ENDIF);
