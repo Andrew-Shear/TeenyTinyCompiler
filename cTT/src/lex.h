@@ -37,7 +37,9 @@ typedef enum TokenType {
 	LT = 208,
 	LTEQ = 209,
 	GT = 210,
-	GTEQ = 211
+	GTEQ = 211,
+	LEFTPAREN = 212,
+	RIGHTPAREN = 213
 } TokenType;
 
 struct Token;

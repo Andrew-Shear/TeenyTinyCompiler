@@ -77,6 +77,7 @@ void Parser_match(Parser *par, TokenType type) {
 	Parser_nextToken(par);
 }
 
+// program ::= {statement}
 void Parser_program(Parser *par) {
 	Emitter_headerLine(par->emit, "#include <stdio.h>");
 	Emitter_headerLine(par->emit, "int main (void) {");
@@ -99,6 +100,13 @@ void Parser_program(Parser *par) {
 	}
 }
 
+// statement ::= "PRINT" (expression | string) nl
+//     | "IF" comparison "THEN" nl {statement} "ENDIF" nl
+//     | "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
+//     | "LABEL" ident nl
+//     | "GOTO" ident nl
+//     | "LET" ident "=" expression nl
+//     | "INPUT" ident nl
 void Parser_statement(Parser *par) {
 	switch (par->curToken->type) {
 		case PRINT:
@@ -218,6 +226,7 @@ void Parser_statement(Parser *par) {
 	Parser_nl(par);
 }
 
+// comparison ::= expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)+
 void Parser_comparison(Parser *par) {
 	Parser_expression(par);
 	if (par->curToken->type == GT   ||
@@ -245,15 +254,31 @@ void Parser_comparison(Parser *par) {
 	}
 }
 
+// expression ::= ["("] term [( "-" | "+" ) expression] [")"]
 void Parser_expression(Parser *par) {
-	Parser_term(par);
-	while (par->curToken->type == PLUS || par->curToken->type == MINUS) {
+	int paren = 0;
+	if (par->curToken->type == LEFTPAREN) {
+		paren = 1;
 		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
-		Parser_term(par);
 	}
+
+	Parser_term(par);
+	if (par->curToken->type == PLUS || par->curToken->type == MINUS) {
+		Emitter_emit(par->emit, par->curToken->text);
+		Parser_nextToken(par);
+		Parser_expression(par);
+	}
+
+	if (paren == 1 && par->curToken->type == RIGHTPAREN) {
+		Emitter_emit(par->emit, par->curToken->text);
+		Parser_nextToken(par);
+	} else if (paren == 1) {
+		Parser_abort(par, "Missing closing parenthesis.");
+	} 
 }
 
+// term ::= unary {( "/" | "*" ) unary}
 void Parser_term(Parser *par) {
 	Parser_unary(par);
 	while (par->curToken->type == ASTERISK || par->curToken->type == SLASH) {
@@ -263,6 +288,7 @@ void Parser_term(Parser *par) {
 	}
 }
 
+// unary ::= ["+" | "-"] primary
 void Parser_unary(Parser *par) {
 	if (par->curToken->type == PLUS || par->curToken->type == MINUS) {
 		Emitter_emit(par->emit, par->curToken->text);
@@ -271,6 +297,7 @@ void Parser_unary(Parser *par) {
 	Parser_primary(par);
 }
 
+// primary ::= number | ident
 void Parser_primary(Parser *par) {
 	if (par->curToken->type == NUMBER) {
 		Emitter_emit(par->emit, par->curToken->text);
@@ -286,6 +313,7 @@ void Parser_primary(Parser *par) {
 	}
 }
 
+// nl ::= '\n'+
 void Parser_nl(Parser *par) {
 	Parser_match(par, NEWLINE);
 	while (par->curToken->type == NEWLINE) {

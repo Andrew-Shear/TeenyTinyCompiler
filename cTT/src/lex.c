@@ -126,6 +126,16 @@ Token *Lexer_getToken(Lexer *lex) {
 				Lexer_abort(lex, t, "Expected !=, got !");
 			}
 			break;
+		
+		case '(':
+			t->text = strdup("(");
+			t->type = LEFTPAREN;
+			break;
+		
+		case ')':
+			t->text = strdup(")");
+			t->type = RIGHTPAREN;
+			break;
 
 		case '\"':
 			Lexer_nextChar(lex);
