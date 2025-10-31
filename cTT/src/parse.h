@@ -3,19 +3,17 @@
 
 #include "lex.h"
 #include "list.h"
+#include "ast.h"
 #include "emit.h"
 
 typedef struct Parser {
 	Lexer *lex;
-	Emitter *emit;
+	AST *ast;
 	Token *curToken;
 	Token *peekToken;
-	List *symbols;
-	List *labelsDeclared;
-	List *labelsGotoed;
 } Parser;	
 
-Parser *Parser_create(Lexer *lex, Emitter *emit);
+Parser *Parser_create(Lexer *lex, AST *ast);
 
 void Parser_kill(Parser *par);
 
@@ -27,17 +25,17 @@ void Parser_match(Parser *par, TokenType type);
 
 void Parser_program(Parser *par);
 
-void Parser_statement(Parser *par);
+ASTNode *Parser_statement(Parser *par);
 
-void Parser_comparison(Parser *par);
+ASTNode *Parser_comparison(Parser *par);
 
-void Parser_expression(Parser *par);
+ASTNode *Parser_expression(Parser *par);
 
-void Parser_term(Parser *par);
+ASTNode *Parser_term(Parser *par);
 
-void Parser_unary(Parser *par);
+ASTNode *Parser_unary(Parser *par);
 
-void Parser_primary(Parser *par);
+ASTNode *Parser_primary(Parser *par);
 
 void Parser_nl(Parser *par);
 

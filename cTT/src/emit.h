@@ -10,18 +10,18 @@ typedef struct Emitter {
 	FILE *code;
 } Emitter;
 
-Emitter *Emitter_create(char *path);
+void Emitter_create(char *path);
 
-void Emitter_kill(Emitter *emit);
+void Emitter_kill();
 
-void Emitter_emit(Emitter *emit, char *code);
+void Emitter_emit(char *code);
 
-void Emitter_emitLine(Emitter *emit, char *code);
+void Emitter_emitLine(char *code);
 
-void Emitter_header(Emitter *emit, char *code);
+void Emitter_header(char *code);
 
-void Emitter_headerLine(Emitter *emit, char *code);
+void Emitter_headerLine(char *code);
 
-void Emitter_writeFile(Emitter *emit);
+void Emitter_writeFile();
 
 #endif

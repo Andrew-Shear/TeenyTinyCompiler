@@ -83,6 +83,8 @@ Token *Lexer_getToken(Lexer *lex);
 
 void Token_kill(Token *t);
 
+Token *Token_copy(Token *t);
+
 void Lexer_readString(Lexer *lex, Token *t);
 
 void Lexer_readNumber(Lexer *lex, Token *t);

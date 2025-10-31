@@ -7,10 +7,10 @@ TEENYS = $(wildcard ./*.teeny, examples/*.teeny)
 all: $(TEENYS)
 
 compile:
-		$(CC) src/teenytiny.c src/parse.c src/lex.c src/emit.c src/list.c -o src/teenytiny
+		$(CC) src/teenytiny.c src/parse.c src/lex.c src/emit.c src/list.c src/ast.c -o src/teenytiny
 
 $(TEENYS):
-		@src/teenytiny $@
+		src/teenytiny $@
 		@$(CC) out.c -o $(notdir $(patsubst %.teeny,%,$@))
 		@rm .header
 		@rm .code

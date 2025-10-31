@@ -3,41 +3,45 @@
 #include <string.h>
 #include "emit.h"
 
-Emitter *Emitter_create(char *path) {
-	Emitter *emit = malloc(sizeof(Emitter));
-	emit->fullPath = strdup(path);
-	emit->header = fopen(HEADER_NAME, "w");
-	emit->code = fopen(CODE_NAME, "w");
+Emitter *emit;
 
-	return emit;
+void Emitter_create(char *path) {
+	Emitter *emitter = malloc(sizeof(Emitter));
+	emitter->fullPath = strdup(path);
+	emitter->header = fopen(HEADER_NAME, "w");
+	emitter->code = fopen(CODE_NAME, "w");
+
+	emit = emitter;
 }
 
-void Emitter_kill(Emitter *emit) {
+void Emitter_kill() {
+	if (emit == NULL)
+		return;
 	fclose(emit->header);
 	fclose(emit->code);
 	free(emit->fullPath);
 	free(emit);
 }
 
-void Emitter_emit(Emitter *emit, char *code) {
+void Emitter_emit(char *code) {
 	fputs(code, emit->code);
 }
 
-void Emitter_emitLine(Emitter *emit, char *code) {
+void Emitter_emitLine(char *code) {
 	fputs(code, emit->code);
 	fputs("\n", emit->code);
 }
 
-void Emitter_header(Emitter *emit, char *code) {
+void Emitter_header(char *code) {
 	fputs(code, emit->header);
 }
 
-void Emitter_headerLine(Emitter *emit, char *code) {
+void Emitter_headerLine(char *code) {
 	fputs(code, emit->header);
 	fputs("\n", emit->header);
 }
 
-void Emitter_writeFile(Emitter *emit) {
+void Emitter_writeFile() {
 	FILE *outputFile = fopen(emit->fullPath, "w");
 	fclose(emit->header);
 	fclose(emit->code);

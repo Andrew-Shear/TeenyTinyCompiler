@@ -4,7 +4,7 @@ The grammar for this language is very simple, as it has very few features, but i
 
 To run:
 
-`make all` -- compiles all .teeny files in examples or in the main src folder.
+`make all` -- compiles all .teeny files in examples or in the main cTT folder.
 
 Then all .teeny files will be executables. Enjoy!
 

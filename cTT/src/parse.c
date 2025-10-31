@@ -3,54 +3,26 @@
 #include <stdlib.h>
 #include "parse.h"
 
-Parser *Parser_create(Lexer *lex, Emitter *emit) {
+Parser *Parser_create(Lexer *lex, AST *ast) {
 	Parser *par = malloc(sizeof(Parser));
 	if (par == NULL) {
 		Lexer_kill(lex);
 		printf("Unable to allocate memory for parser.\n");
 		exit(1);
 	}
-
-	par->symbols = List_create();
-	if (par->symbols == NULL) {
-		Lexer_kill(lex);
-		free(par);
-		printf("Unable to allocate memory for symbols list.\n");
-		exit(1);
-	}
-
-	par->labelsDeclared = List_create();
-	if (par->labelsDeclared == NULL) {
-		Lexer_kill(lex);
-		free(par);
-		free(par->symbols);
-		printf("Unable to allocate memory for labelsDeclared list.\n");
-		exit(1);
-	}
-	par->labelsGotoed = List_create();
-	if (par->labelsGotoed == NULL) {
-		Lexer_kill(lex);
-		free(par);
-		free(par->symbols);
-		free(par->labelsDeclared);
-		printf("Unable to allocate memory for labelsGotoed list.\n");
-		exit(1);
-	}
 	
 	par->lex = lex;
-	par->emit = emit;
+	par->ast = ast;
 	par->curToken = Lexer_getToken(lex);
 	par->peekToken = Lexer_getToken(lex);
 	return par;
 }
 
 void Parser_kill(Parser *par) {
-	Lexer_kill(par->lex);
+	if (par == NULL)
+		return;
 	Token_kill(par->curToken);
 	Token_kill(par->peekToken);
-	List_clear_destroy(par->symbols);
-	List_clear_destroy(par->labelsDeclared);
-	List_clear_destroy(par->labelsGotoed);
 	free(par);
 }
 
@@ -65,7 +37,7 @@ void Parser_abort(Parser *par, char *message) {
 	printf(message);
 	printf("\n");
 	Lexer_kill(par->lex);
-	Emitter_kill(par->emit);
+	AST_kill(par->ast);
 	Parser_kill(par);
 	exit(1);
 }	
@@ -79,22 +51,18 @@ void Parser_match(Parser *par, TokenType type) {
 
 // program ::= {statement}
 void Parser_program(Parser *par) {
-	Emitter_headerLine(par->emit, "#include <stdio.h>");
-	Emitter_headerLine(par->emit, "int main (void) {");
-	
 	while (par->curToken->type == NEWLINE) {
 		Parser_nextToken(par);
 	}
 
+	ASTNode *statement;
 	while (par->curToken->type != eOF) {
-		Parser_statement(par);
+		statement = Parser_statement(par);
+		AST_add(par->ast, statement);
 	}
 
-	Emitter_emitLine(par->emit, "return 0;");
-	Emitter_emitLine(par->emit, "}");
-
-	LIST_FOREACH(par->labelsGotoed, first, next, cur) {
-		if (!(List_contains(par->labelsDeclared, (char *) cur->value))) {
+	LIST_FOREACH(par->ast->labelsGotoed, first, next, cur) {
+		if (!(List_contains(par->ast->labelsDeclared, (char *) cur->value))) {
 			Parser_abort(par, "Attempted to GOTO an undeclared label.");
 		}
 	}
@@ -107,234 +75,270 @@ void Parser_program(Parser *par) {
 //     | "GOTO" ident nl
 //     | "LET" ident "=" expression nl
 //     | "INPUT" ident nl
-void Parser_statement(Parser *par) {
+ASTNode *Parser_statement(Parser *par) {
+	ASTNode *statement = ASTNode_create(par->curToken);
+	ASTNode *child = ASTNode_create(NULL);
+
 	switch (par->curToken->type) {
 		case PRINT:
 			Parser_nextToken(par);
 			if (par->curToken->type == STRING) {
-				Emitter_emit(par->emit, "printf(\"");
-				Emitter_emit(par->emit, par->curToken->text);
-				Emitter_emitLine(par->emit, "\\n\");");
+				child->token = Token_copy(par->curToken);
+				ASTNode_add(statement, child);
 				Parser_nextToken(par);
 			} else {
-				Emitter_emit(par->emit, "printf(\"%");
-				Emitter_emit(par->emit, ".2f\\n\", (float)(");
-				Parser_expression(par);
-				Emitter_emitLine(par->emit, "));");
+				ASTNode_add(statement, Parser_expression(par));
 			}
 			break;
 			
 		case IF:
 			Parser_nextToken(par);
-			Emitter_emit(par->emit, "if(");
-			Parser_comparison(par);
+			ASTNode_add(statement, Parser_comparison(par));
 
 			Parser_match(par, THEN);
 			Parser_nl(par);
-			Emitter_emitLine(par->emit, "){");
 
 			while (par->curToken->type != ENDIF && par->curToken->type != ELSEIF && par->curToken->type != ELSE) {
-				Parser_statement(par);
+				ASTNode_add(statement, Parser_statement(par));
 			}
 			
+			ASTNode *previous = statement;
 			while (par->curToken->type == ELSEIF) {
+				ASTNode *current = ASTNode_create(par->curToken);
+				ASTNode_add(previous, current);
+				
 				Parser_nextToken(par);
-				Emitter_emit(par->emit, "} else if (");
-				Parser_comparison(par);
+				ASTNode_add(current, Parser_comparison(par));
 
 				Parser_match(par, THEN);
 				Parser_nl(par);
-				Emitter_emitLine(par->emit, ") {");
 
 				while (par->curToken->type != ENDIF && par->curToken->type != ELSEIF && par->curToken->type != ELSE) {
-					Parser_statement(par);
+					ASTNode_add(current, Parser_statement(par));
 				}
+
+				previous = current;
+				current = NULL;
 			}
 
 			if (par->curToken->type == ELSE) {
+				ASTNode *current = ASTNode_create(par->curToken);
+				ASTNode_add(previous, current);
+
 				Parser_nextToken(par);
 				Parser_nl(par);
-				Emitter_emitLine(par->emit, "} else {");
 
 				while (par->curToken->type != ENDIF) {
-					Parser_statement(par);
+					ASTNode_add(current, Parser_statement(par));
 				}
 			}
 
 			Parser_match(par, ENDIF);
-			Emitter_emitLine(par->emit, "}");
 			break;
 		
 		case WHILE:
 			Parser_nextToken(par);
-			Emitter_emit(par->emit, "while(");
-			Parser_comparison(par);
+			ASTNode_add(statement, Parser_comparison(par));
 
 			Parser_match(par, REPEAT);
 			Parser_nl(par);
-			Emitter_emitLine(par->emit, "){");
 
 			while (par->curToken->type != ENDWHILE) {
-				Parser_statement(par);
+				ASTNode_add(statement, Parser_statement(par));
 			}
 
 			Parser_match(par, ENDWHILE);
-			Emitter_emitLine(par->emit, "}");
 			break;
 			
 		case LABEL:
 			Parser_nextToken(par);
-			if (List_contains(par->labelsDeclared, par->curToken->text))
+			if (List_contains(par->ast->labelsDeclared, par->curToken->text))
 				Parser_abort(par, "Label declared twice.");
-			List_push(par->labelsDeclared, strdup(par->curToken->text));
+			List_push(par->ast->labelsDeclared, strdup(par->curToken->text));
+			child->token = Token_copy(par->curToken);
+			ASTNode_add(statement, child);
 
-			Emitter_emit(par->emit, par->curToken->text);
-			Emitter_emitLine(par->emit, ":");
 			Parser_match(par, IDENT);
 			break;
 
 		case GOTO:
 			Parser_nextToken(par);
-			List_push(par->labelsGotoed, strdup(par->curToken->text));
-			Emitter_emit(par->emit, "goto ");
-			Emitter_emit(par->emit, par->curToken->text);
-			Emitter_emitLine(par->emit, ";");
+
+			List_push(par->ast->labelsGotoed, strdup(par->curToken->text));
+			child->token = Token_copy(par->curToken);
+			ASTNode_add(statement, child);
+			
 			Parser_match(par, IDENT);
 			break;
 
 		case LET:
 			Parser_nextToken(par);
 
-			if (!(List_contains(par->symbols, par->curToken->text))) {
-				List_push(par->symbols, strdup(par->curToken->text));
-				Emitter_header(par->emit, "float ");
-				Emitter_header(par->emit, par->curToken->text);
-				Emitter_headerLine(par->emit, ";");
+			if (!(List_contains(par->ast->symbols, par->curToken->text))) {
+				List_push(par->ast->symbols, strdup(par->curToken->text));
 			}
 
-			Emitter_emit(par->emit, par->curToken->text);
-			Emitter_emit(par->emit, " = ");
-
+			child->token = Token_copy(par->curToken);
+			ASTNode_add(statement, child);
 			Parser_match(par, IDENT);
 			Parser_match(par, EQ);
-			Parser_expression(par);
-			Emitter_emitLine(par->emit, ";");
+			ASTNode_add(statement, Parser_expression(par));
 			break;
 
 		case INPUT:
 			Parser_nextToken(par);
+			child->token = Token_copy(par->curToken);
+			ASTNode_add(statement, child);
 			
-			if (!(List_contains(par->symbols, par->curToken->text))) {
-				List_push(par->symbols, strdup(par->curToken->text));
-				Emitter_header(par->emit, "float ");
-				Emitter_header(par->emit, par->curToken->text);
-				Emitter_headerLine(par->emit, ";");
+			if (!(List_contains(par->ast->symbols, par->curToken->text))) {
+				List_push(par->ast->symbols, strdup(par->curToken->text));
 			}
 			
-			Emitter_emit(par->emit, "if(0 == scanf(\"%");
-			Emitter_emit(par->emit, "f\", &");
-			Emitter_emit(par->emit, par->curToken->text);
-			Emitter_emitLine(par->emit, ")) {");
-			Emitter_emit(par->emit, par->curToken->text);
-			Emitter_emitLine(par->emit, " = 0;");
-			Emitter_emit(par->emit, "scanf(\"%");
-			Emitter_emitLine(par->emit, "*s\");");
-			Emitter_emitLine(par->emit, "}");
-
 			Parser_match(par, IDENT);
 			break;
 		
 		default:
 			Parser_abort(par, "Invalid statement.");
 	}
+
+	if (child->token == NULL) {
+		ASTNode_kill(child);
+	}
+
 	Parser_nl(par);
+
+	return statement;
 }
 
 // comparison ::= expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)+
-void Parser_comparison(Parser *par) {
-	Parser_expression(par);
+ASTNode *Parser_comparison(Parser *par) {
+	ASTNode *expression = Parser_expression(par);
+	ASTNode *comparison = ASTNode_create(par->curToken);
+	ASTNode_add(comparison, expression);
+
 	if (par->curToken->type == GT   ||
 		par->curToken->type == GTEQ ||
 		par->curToken->type == LT   ||
 		par->curToken->type == LTEQ ||
 		par->curToken->type == EQEQ ||
 		par->curToken->type == NOTEQ) {
-		Emitter_emit(par->emit, par->curToken->text);
+		
 		Parser_nextToken(par);
-		Parser_expression(par);
+		ASTNode_add(comparison, Parser_expression(par));
 	} else {
+		ASTNode_kill(comparison);
 		Parser_abort(par, "Expected comparison operator.");
 	}
-
+	
+	ASTNode *previous = comparison;
+	ASTNode *newNode = NULL;
 	while (par->curToken->type == GT   ||
 		par->curToken->type == GTEQ ||
 		par->curToken->type == LT   ||
 		par->curToken->type == LTEQ ||
 		par->curToken->type == EQEQ ||
 		par->curToken->type == NOTEQ) {
-		Emitter_emit(par->emit, par->curToken->text);
+		
+		newNode = ASTNode_create(par->curToken);
+		ASTNode_add(newNode, List_pop(previous->children));
+		ASTNode_add(previous, newNode);
+
 		Parser_nextToken(par);
-		Parser_expression(par);
+		ASTNode_add(newNode, Parser_expression(par));
+		previous = newNode;
 	}
+
+	return comparison;
 }
 
 // expression ::= ["("] term [( "-" | "+" ) expression] [")"]
-void Parser_expression(Parser *par) {
+ASTNode *Parser_expression(Parser *par) {
+	ASTNode *expression = NULL;
 	int paren = 0;
+	Token *parenToken = NULL;
 	if (par->curToken->type == LEFTPAREN) {
 		paren = 1;
-		Emitter_emit(par->emit, par->curToken->text);
+		parenToken = par->curToken;
 		Parser_nextToken(par);
 	}
 
-	Parser_term(par);
+	ASTNode *term = Parser_term(par);
 	if (par->curToken->type == PLUS || par->curToken->type == MINUS) {
-		Emitter_emit(par->emit, par->curToken->text);
+		expression = ASTNode_create(par->curToken);
+		ASTNode_add(expression, term);
+
 		Parser_nextToken(par);
-		Parser_expression(par);
+		ASTNode_add(expression, Parser_expression(par));
+	} else {
+		expression = term;
 	}
 
 	if (paren == 1 && par->curToken->type == RIGHTPAREN) {
-		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
+		ASTNode *paren = ASTNode_create(parenToken);
+		List_unshift(expression->children, paren);
 	} else if (paren == 1) {
 		Parser_abort(par, "Missing closing parenthesis.");
 	} 
+
+	return expression;
 }
 
 // term ::= unary {( "/" | "*" ) unary}
-void Parser_term(Parser *par) {
-	Parser_unary(par);
+ASTNode *Parser_term(Parser *par) {
+	ASTNode *term = Parser_unary(par);
+	ASTNode *temp = NULL;
+
 	while (par->curToken->type == ASTERISK || par->curToken->type == SLASH) {
-		Emitter_emit(par->emit, par->curToken->text);
+		temp = term;
+		term = ASTNode_create(par->curToken);
+		ASTNode_add(term, temp);
+
 		Parser_nextToken(par);
-		Parser_unary(par);
+		ASTNode_add(term, Parser_unary(par));
 	}
+
+	return term;
 }
 
 // unary ::= ["+" | "-"] primary
-void Parser_unary(Parser *par) {
+ASTNode *Parser_unary(Parser *par) {
+	ASTNode *unary = NULL;
 	if (par->curToken->type == PLUS || par->curToken->type == MINUS) {
-		Emitter_emit(par->emit, par->curToken->text);
+		unary = ASTNode_create(par->curToken);
+
+		Token *zeroToken = malloc(sizeof(Token));
+		zeroToken->text = strdup("0");
+		zeroToken->type = NUMBER;
+
+		ASTNode *zeroNode = ASTNode_create(zeroToken);
+
+		ASTNode_add(unary, zeroNode);
 		Parser_nextToken(par);
+		ASTNode_add(unary, Parser_primary(par));
+	} else {
+		unary = Parser_primary(par);
 	}
-	Parser_primary(par);
+
+	return unary;
 }
 
 // primary ::= number | ident
-void Parser_primary(Parser *par) {
+ASTNode *Parser_primary(Parser *par) {
+	ASTNode *primary = ASTNode_create(par->curToken);
+
 	if (par->curToken->type == NUMBER) {
-		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
 	} else if (par->curToken->type == IDENT) {
-		if (!(List_contains(par->symbols, par->curToken->text))) {
+		if (!(List_contains(par->ast->symbols, par->curToken->text))) {
 			Parser_abort(par, "Referenced variable before assignment.");
 		}
-		Emitter_emit(par->emit, par->curToken->text);
 		Parser_nextToken(par);
 	} else {
 		Parser_abort(par, "Unexpected token in primary.");
 	}
+
+	return primary;
 }
 
 // nl ::= '\n'+

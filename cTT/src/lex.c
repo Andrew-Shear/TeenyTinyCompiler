@@ -17,6 +17,8 @@ Lexer *Lexer_create(FILE *source) {
 }
 
 void Lexer_kill(Lexer *lex) {
+	if (lex == NULL)
+		return;
 	fclose(lex->source);
 	free(lex);
 }
@@ -170,8 +172,20 @@ Token *Lexer_getToken(Lexer *lex) {
 }
 
 void Token_kill(Token *t) {
+	if (t == NULL)
+		return;
 	free(t->text);
 	free(t);
+}
+
+Token *Token_copy(Token *t) {
+	if (t == NULL)
+		return NULL;
+
+	Token *newToken = malloc(sizeof(Token));
+	newToken->type = t->type;
+	newToken->text = strdup(t->text);
+	return newToken;
 }
 
 void Lexer_readString(Lexer *lex, Token *t) {
