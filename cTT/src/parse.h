@@ -27,6 +27,22 @@ void Parser_program(Parser *par);
 
 ASTNode *Parser_statement(Parser *par);
 
+ASTNode *Parser_print(Parser *par);
+
+ASTNode *Parser_if(Parser *par);
+
+ASTNode *Parser_while(Parser *par);
+
+ASTNode *Parser_for(Parser *par);
+
+ASTNode *Parser_label(Parser *par);
+
+ASTNode *Parser_goto(Parser *par);
+
+ASTNode *Parser_let(Parser *par);
+
+ASTNode *Parser_input(Parser *par);
+
 ASTNode *Parser_comparison(Parser *par);
 
 ASTNode *Parser_expression(Parser *par);

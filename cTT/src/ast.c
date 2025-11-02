@@ -68,6 +68,8 @@ void AST_add(AST *parent, ASTNode *child) {
 }
 
 void ASTNode_kill(ASTNode *node) {
+	if (node == NULL)
+		return;
 	if (node->token != NULL) {
 		Token_kill(node->token);
 	}
@@ -384,6 +386,8 @@ TokenType AST_getSymbolType(char *text) {
 }
 
 void Symbol_kill(Symbol *s) {
+	if (s == NULL)
+		return;
 	free(s->text);
 	free(s);
 }
