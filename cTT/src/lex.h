@@ -29,6 +29,9 @@ typedef enum TokenType {
 	WHILE = 111,
 	REPEAT = 112,
 	ENDWHILE = 113,
+	INT = 114,
+	FLOAT = 115,
+	BOOL = 116,
 	EQ = 201,
 	PLUS = 202,
 	MINUS = 203,
@@ -66,7 +69,10 @@ const static struct {
 	{ELSE, "ELSE"},
 	{WHILE, "WHILE"},
 	{REPEAT, "REPEAT"},
-	{ENDWHILE, "ENDWHILE"}
+	{ENDWHILE, "ENDWHILE"},
+	{INT, "INT"},
+	{FLOAT, "FLOAT"},
+	{BOOL, "BOOL"}
 };
 
 Lexer *Lexer_create(FILE *source);

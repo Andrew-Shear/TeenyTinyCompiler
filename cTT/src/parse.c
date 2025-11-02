@@ -73,8 +73,8 @@ void Parser_program(Parser *par) {
 //     | "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
 //     | "LABEL" ident nl
 //     | "GOTO" ident nl
-//     | "LET" ident "=" expression nl
-//     | "INPUT" ident nl
+//     | "LET" ["INT" | "FLOAT" | "BOOL"] ident "=" expression nl
+//     | "INPUT" ["INT" | "FLOAT" | "BOOL"] ident nl
 ASTNode *Parser_statement(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	ASTNode *child = ASTNode_create(NULL);
@@ -173,10 +173,22 @@ ASTNode *Parser_statement(Parser *par) {
 
 		case LET:
 			Parser_nextToken(par);
-
-			if (!(List_contains(par->ast->symbols, par->curToken->text))) {
-				List_push(par->ast->symbols, strdup(par->curToken->text));
+			
+			if (par->curToken->type == INT || par->curToken->type == FLOAT || par->curToken->type == BOOL) {
+				// declaring a new symbol 
+				TokenType varType = par->curToken->type;
+				Parser_nextToken(par);
+				if (AST_seenSymbol(par->ast, par->curToken->text)) {
+					Parser_abort(par, "Attemped to declare a variable that was previously used.\n");
+				}
+				AST_addSymbol(par->ast, par->curToken->text, varType);
+			} else {
+				// not declaring a new symbol, so if i haven't seen it, kill the program.
+				if (!(AST_seenSymbol(par->ast, par->curToken->text))){
+					Parser_abort(par, "Attempted to set a new variable without declaring a type.\n");
+				}
 			}
+			
 
 			child->token = Token_copy(par->curToken);
 			ASTNode_add(statement, child);
@@ -187,12 +199,24 @@ ASTNode *Parser_statement(Parser *par) {
 
 		case INPUT:
 			Parser_nextToken(par);
+
+			if (par->curToken->type == INT || par->curToken->type == FLOAT || par->curToken->type == BOOL) {
+				// declaring a new symbol 
+				TokenType varType = par->curToken->type;
+				Parser_nextToken(par);
+				if (AST_seenSymbol(par->ast, par->curToken->text)) {
+					Parser_abort(par, "Attemped to declare a variable that was previously used.\n");
+				}
+				AST_addSymbol(par->ast, par->curToken->text, varType);
+			} else {
+				// not declaring a new symbol, so if i haven't seen it, kill the program.
+				if (!(AST_seenSymbol(par->ast, par->curToken->text))){
+					Parser_abort(par, "Attempted to set a new variable without declaring a type.\n");
+				}
+			}
+
 			child->token = Token_copy(par->curToken);
 			ASTNode_add(statement, child);
-			
-			if (!(List_contains(par->ast->symbols, par->curToken->text))) {
-				List_push(par->ast->symbols, strdup(par->curToken->text));
-			}
 			
 			Parser_match(par, IDENT);
 			break;
@@ -330,7 +354,7 @@ ASTNode *Parser_primary(Parser *par) {
 	if (par->curToken->type == NUMBER) {
 		Parser_nextToken(par);
 	} else if (par->curToken->type == IDENT) {
-		if (!(List_contains(par->ast->symbols, par->curToken->text))) {
+		if (!(AST_seenSymbol(par->ast, par->curToken->text))) {
 			Parser_abort(par, "Referenced variable before assignment.");
 		}
 		Parser_nextToken(par);

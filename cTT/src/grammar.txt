@@ -4,11 +4,14 @@ statement ::= "PRINT" (expression | string) nl
     | "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
     | "LABEL" ident nl
     | "GOTO" ident nl
-    | "LET" ident "=" expression nl
-    | "INPUT" ident nl
+    | "LET" ["INT" | "FLOAT" | "BOOL"] ident "=" expression nl
+    | "INPUT" ["INT" | "FLOAT" | "BOOL"] ident nl
 comparison ::= expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)+
 expression ::= ["("] term [( "-" | "+" ) expression] [")"]
 term ::= unary {( "/" | "*" ) unary}
 unary ::= ["+" | "-"] primary
 primary ::= number | ident
 nl ::= '\n'+
+
+notes:
+for "LET" in statement, if you've used a variable before, you can't redeclare the type.

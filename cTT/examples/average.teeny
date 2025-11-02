@@ -1,4 +1,4 @@
-LET a = 0
+LET INT a = 0
 WHILE a < 1 REPEAT
     PRINT "Enter number of scores: "
     INPUT a
@@ -11,10 +11,10 @@ WHILE a < 1 REPEAT
 	ENDIF
 ENDWHILE
 
-LET b = 0
-LET s = 0
+LET INT b = 0
+LET INT s = 0
 WHILE b < a REPEAT
-    INPUT c
+    INPUT INT c
     LET s = s + c
     LET b = b + 1
 ENDWHILE

@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// only use when needed.
+AST *astGlobal;
+
 AST *AST_create() {
 	AST *ast = malloc(sizeof(AST));
 	if (ast == NULL) {
@@ -39,6 +42,8 @@ AST *AST_create() {
 		printf("Unable to allocate memory for labelsGotoed list.\n");
 		exit(1);
 	}
+
+	astGlobal = ast;
 	return ast;
 }
 
@@ -74,8 +79,8 @@ void ASTNode_kill(ASTNode *node) {
 }
 
 void AST_emit(AST *ast) {
-	Emitter_headerLine("#include <stdio.h>");
-	Emitter_headerLine("int main (void) {");
+	Emitter_emitLine("#include <stdio.h>");
+	Emitter_emitLine("int main (void) {");
 	AST_emitSymbolHeaders(ast->symbols);
 
 	LIST_FOREACH(ast->children, first, next, cur) {
@@ -88,9 +93,15 @@ void AST_emit(AST *ast) {
 
 void AST_emitSymbolHeaders(List *symbols) {
 	LIST_FOREACH(symbols, first, next, cur) {
-		Emitter_header("float ");
-		Emitter_header((char *) cur->value);
-		Emitter_headerLine(";");
+		Symbol *s = (Symbol *) cur->value;
+		if (s->type == FLOAT)
+			Emitter_emit("float ");
+		else if (s->type == INT)
+			Emitter_emit("int ");
+		else if (s->type == BOOL)
+			Emitter_emit("int ");	
+		Emitter_emit(s->text);
+		Emitter_emitLine(";");
 	}
 }
 
@@ -101,10 +112,19 @@ void AST_kill(AST *ast) {
 	LIST_FOREACH(ast->children, first, next, cur) {
 		ASTNode_kill((ASTNode *) cur->value);
 	}
-	List_clear_destroy(ast->symbols);
+	AST_killSymbols(ast);
+	List_destroy(ast->symbols);
 	List_clear_destroy(ast->labelsDeclared);
 	List_clear_destroy(ast->labelsGotoed);
+	List_destroy(ast->children);
 	free(ast);
+}
+
+void AST_killSymbols(AST *ast) {
+	LIST_FOREACH(ast->symbols, first, next, cur) {
+		Symbol_kill((Symbol *) cur->value);
+	}
+
 }
 
 void AST_statement(ASTNode *statement) {
@@ -118,6 +138,11 @@ void AST_statement(ASTNode *statement) {
 				Emitter_emit("printf(\"");
 				Emitter_emit(temp->token->text);
 				Emitter_emitLine("\\n\");");
+			} else if (AST_getSymbolType(temp->token->text) == INT) {
+				Emitter_emit("printf(\"%");
+				Emitter_emit("d\\n\", ");
+				AST_expression(temp);
+				Emitter_emitLine(");");
 			} else {
 				Emitter_emit("printf(\"%");
 				Emitter_emit(".2f\\n\", (float)(");
@@ -200,6 +225,8 @@ void AST_statement(ASTNode *statement) {
 
 			temp2 = (ASTNode *) List_shift(statement->children);
 			AST_expression(temp2);
+			if (AST_getSymbolType(temp->token->text) == BOOL)
+				Emitter_emit(" == 0 ? 0 : 1");
 			Emitter_emitLine(";");
 			break;
 
@@ -207,7 +234,10 @@ void AST_statement(ASTNode *statement) {
 		case INPUT:
 			temp = (ASTNode *) List_shift(statement->children);
 			Emitter_emit("if(0 == scanf(\"%");
-			Emitter_emit("f\", &");
+			if (AST_getSymbolType(temp->token->text) == INT)
+				Emitter_emit("d\", &");
+			else
+				Emitter_emit("f\", &");
 			Emitter_emit(temp->token->text);
 			Emitter_emitLine(")) {");
 			Emitter_emit(temp->token->text);
@@ -293,3 +323,34 @@ void AST_expression(ASTNode *expression) {
 	ASTNode_kill(child2);
 }
 
+int AST_seenSymbol(AST *ast, char *name) {
+	LIST_FOREACH(ast->symbols, first, next, cur) {
+		Symbol *c = (Symbol *) cur->value;
+		if (strcmp(c->text, name) == 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void AST_addSymbol(AST *ast, char *text, TokenType type) {
+	Symbol *s = malloc(sizeof(Symbol));
+	s->text = strdup(text);
+	s->type = type;
+	List_push(ast->symbols, s);
+}
+
+TokenType AST_getSymbolType(char *text) {
+	LIST_FOREACH(astGlobal->symbols, first, next, cur) {
+		Symbol *c = (Symbol *) cur->value;
+		if (strcmp(c->text, text) == 0) {
+			return c->type;
+		}
+	}
+	return eOF;
+}
+
+void Symbol_kill(Symbol *s) {
+	free(s->text);
+	free(s);
+}

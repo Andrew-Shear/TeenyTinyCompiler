@@ -1,9 +1,10 @@
 PRINT "How many fibonacci numbers do you want?"
-INPUT nums
+INPUT INT nums
 PRINT ""
 
-LET a = 0
-LET b = 1
+LET INT a = 0
+LET INT b = 1
+LET INT c = 0
 WHILE nums > 0 REPEAT
     PRINT a
     LET c = a + b
