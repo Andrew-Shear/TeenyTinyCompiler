@@ -71,6 +71,7 @@ void Parser_program(Parser *par) {
 // statement ::= "PRINT" (expression | string) nl
 //     | "IF" comparison "THEN" nl {statement} {"ELSEIF" comparison "THEN" nl {statement}} [ELSE nl {statement}] "ENDIF" nl
 //     | "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
+//     | "FOR" ident "=" expression "TO" expression "REPEAT" nl {statement} "ENDFOR" nl
 //     | "LABEL" ident nl
 //     | "GOTO" ident nl
 //     | "LET" ["INT" | "FLOAT" | "BOOL"] ident "=" expression nl
@@ -150,6 +151,42 @@ ASTNode *Parser_statement(Parser *par) {
 			Parser_match(par, ENDWHILE);
 			break;
 			
+		case FOR:
+			Parser_nextToken(par);
+
+			if (par->curToken->type == INT || par->curToken->type == FLOAT) {
+				// declaring a new symbol 
+				TokenType varType = par->curToken->type;
+				Parser_nextToken(par);
+				if (AST_seenSymbol(par->ast, par->curToken->text)) {
+					Parser_abort(par, "Attemped to declare a variable that was previously used.\n");
+				}
+				AST_addSymbol(par->ast, par->curToken->text, varType);
+			} else {
+				// not declaring a new symbol, so if i haven't seen it, kill the program.
+				if (!(AST_seenSymbol(par->ast, par->curToken->text))){
+					Parser_abort(par, "Attempted to set a new variable without declaring a type.\n");
+				}
+			}
+
+			child->token = Token_copy(par->curToken);
+			ASTNode_add(statement, child);
+			Parser_match(par, IDENT);
+			Parser_match(par, EQ);
+			ASTNode_add(statement, Parser_expression(par));
+
+			Parser_match(par, TO);
+			ASTNode_add(statement, Parser_expression(par));
+			Parser_match(par, REPEAT);
+			Parser_nl(par);
+
+			while (par->curToken->type != ENDFOR) {
+				ASTNode_add(statement, Parser_statement(par));
+			}
+
+			Parser_match(par, ENDFOR);
+			break;
+
 		case LABEL:
 			Parser_nextToken(par);
 			if (List_contains(par->ast->labelsDeclared, par->curToken->text))

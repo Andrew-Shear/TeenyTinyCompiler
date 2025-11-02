@@ -202,6 +202,39 @@ void AST_statement(ASTNode *statement) {
 			Emitter_emitLine("}");
 			break;
 		
+		// statement.children = List(IDENT, expression, expression, {statement});
+		case FOR:
+			Emitter_emit("for (");
+			temp = (ASTNode *) List_shift(statement->children);
+			Emitter_emit(temp->token->text);
+			Emitter_emit(" = ");
+
+			temp2 = (ASTNode *) List_shift(statement->children);
+			AST_expression(temp2);
+			Emitter_emit("; ");
+			Emitter_emit(temp->token->text);
+			Emitter_emit(" <= ");
+			
+			ASTNode_kill(temp2);
+			temp2 = (ASTNode *) List_shift(statement->children);
+			AST_expression(temp2);
+
+			Emitter_emit("; ");
+			Emitter_emit(temp->token->text);
+			Emitter_emit("++) {");
+			ASTNode_kill(temp2);
+
+			while (statement->children->first != NULL) {
+				temp2 = (ASTNode *) List_shift(statement->children);
+				AST_statement(temp2);
+				ASTNode_kill(temp2);
+				temp2 = NULL;
+			}
+			Emitter_emitLine("}");
+
+
+			break;
+
 		// statement.children = List(IDENT)
 		case LABEL:
 			temp = (ASTNode *) List_shift(statement->children);

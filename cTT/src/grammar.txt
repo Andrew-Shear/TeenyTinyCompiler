@@ -1,7 +1,8 @@
 program ::= {statement}
 statement ::= "PRINT" (expression | string) nl
     | "IF" comparison "THEN" nl {statement} {"ELSEIF" comparison "THEN" nl {statement}} [ELSE nl {statement}] "ENDIF" nl
-    | "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
+    | "WHILE" ("INT" | "FLOAT") comparison "REPEAT" nl {statement} "ENDWHILE" nl
+	| "FOR" ident "=" expression "TO" expression "REPEAT" nl {statement} "ENDFOR" nl
     | "LABEL" ident nl
     | "GOTO" ident nl
     | "LET" ["INT" | "FLOAT" | "BOOL"] ident "=" expression nl
@@ -14,4 +15,6 @@ primary ::= number | ident
 nl ::= '\n'+
 
 notes:
-for "LET" in statement, if you've used a variable before, you can't redeclare the type.
+For "LET", you only need to declare a variable's type once. If you try to do it again, the compiler will throw an error.
+For "FOR", the loops are inclusive, so "FOR INT a = 0 TO 1" will run twice, once with a = 0 and once with a = 1.
+

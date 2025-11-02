@@ -13,11 +13,10 @@ ENDWHILE
 
 LET INT b = 0
 LET INT s = 0
-WHILE b < a REPEAT
+FOR b = 1 TO a REPEAT
     INPUT INT c
     LET s = s + c
-    LET b = b + 1
-ENDWHILE
+ENDFOR
 
 PRINT "Average: "
 PRINT s / a

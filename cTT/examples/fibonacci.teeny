@@ -5,10 +5,9 @@ PRINT ""
 LET INT a = 0
 LET INT b = 1
 LET INT c = 0
-WHILE nums > 0 REPEAT
+FOR INT count = 1 TO nums REPEAT
     PRINT a
     LET c = a + b
     LET a = b
     LET b = c
-    LET nums = nums - 1
-ENDWHILE
+ENDFOR
