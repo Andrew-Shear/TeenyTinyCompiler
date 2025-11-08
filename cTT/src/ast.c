@@ -102,6 +102,8 @@ void AST_emitSymbolHeaders(List *symbols) {
 			Emitter_emit("int ");
 		else if (s->type == BOOL)
 			Emitter_emit("int ");	
+		else if (s->type == STRING)
+			Emitter_emit("char *");
 		Emitter_emit(s->text);
 		Emitter_emitLine(";");
 	}
@@ -144,6 +146,11 @@ void AST_statement(ASTNode *statement) {
 				Emitter_emit("printf(\"%");
 				Emitter_emit("d\\n\", ");
 				AST_expression(temp);
+				Emitter_emitLine(");");
+			} else if (AST_getSymbolType(temp->token->text) == STRING) {
+				Emitter_emit("printf(\"%");
+				Emitter_emit("s\\n\", ");
+				Emitter_emit(temp->token->text);
 				Emitter_emitLine(");");
 			} else {
 				Emitter_emit("printf(\"%");
@@ -330,7 +337,12 @@ void AST_comparison(ASTNode *comparison) {
 // 	else:
 // 		expression.children = List(["("])
 void AST_expression(ASTNode *expression) {
-	if (!(expression->token->type == PLUS
+	if (expression->token->type == STRING) {
+		Emitter_emit("\"");
+		Emitter_emit(expression->token->text);
+		Emitter_emit("\"");
+		return;
+	} else if (!(expression->token->type == PLUS
 		|| expression->token->type == MINUS
 		|| expression->token->type == ASTERISK 
 		|| expression->token->type == SLASH)) {

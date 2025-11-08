@@ -1,0 +1,7 @@
+LET INT x = 3
+LET FLOAT y = 6.445
+PRINT x + y
+
+PRINT " "
+LET STRING z = "hi!"
+PRINT z

@@ -179,7 +179,7 @@ ASTNode *Parser_if(Parser *par) {
 }
 
 
-// while ::= "WHILE" ("INT" | "FLOAT") comparison "REPEAT" nl {statement} "ENDWHILE" nl
+// while ::= "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
 ASTNode *Parser_while(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
@@ -196,23 +196,29 @@ ASTNode *Parser_while(Parser *par) {
 	return statement;
 }
 
-// for ::= "FOR" ident "=" expression "TO" expression "REPEAT" nl {statement} "ENDFOR" nl
+// for ::= "FOR" ["INT" || "FLOAT"] ident "=" expression "TO" expression "REPEAT" nl {statement} "ENDFOR" nl
 ASTNode *Parser_for(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
 
-	if (par->curToken->type == INT || par->curToken->type == FLOAT) {
+	ASTNode *variable = Parser_variable(par);
+	if (variable != NULL) {
 		// declaring a new symbol 
-		TokenType varType = par->curToken->type;
-		Parser_nextToken(par);
-		if (AST_seenSymbol(par->ast, par->curToken->text)) {
-			Parser_abort(par, "Attemped to declare a variable that was previously used.\n");
+		TokenType varType = variable->token->type;
+		ASTNode_kill(variable);
+		if (varType != INT && varType != FLOAT) {
+			Parser_abort(par, "Attempted to create a for loop without an integer or float.");
 		}
+
+		if (AST_seenSymbol(par->ast, par->curToken->text)) {
+			Parser_abort(par, "Attemped to declare a variable that was previously used.");
+		}
+
 		AST_addSymbol(par->ast, par->curToken->text, varType);
 	} else {
 		// not declaring a new symbol, so if i haven't seen it, kill the program.
 		if (!(AST_seenSymbol(par->ast, par->curToken->text))){
-			Parser_abort(par, "Attempted to set a new variable without declaring a type.\n");
+			Parser_abort(par, "Attempted to set a new variable without declaring a type.");
 		}
 	}
 
@@ -261,15 +267,16 @@ ASTNode *Parser_goto(Parser *par) {
 	return statement;
 }
 
-// let ::= "LET" ["INT" | "FLOAT" | "BOOL"] ident "=" expression nl
+// let ::= "LET" variable ident "=" expression nl
 ASTNode *Parser_let(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
 
-	if (par->curToken->type == INT || par->curToken->type == FLOAT || par->curToken->type == BOOL) {
+	ASTNode *variable = Parser_variable(par);
+	if (variable != NULL) {
 		// declaring a new symbol 
-		TokenType varType = par->curToken->type;
-		Parser_nextToken(par);
+		TokenType varType = variable->token->type;
+		ASTNode_kill(variable);
 		if (AST_seenSymbol(par->ast, par->curToken->text)) {
 			Parser_abort(par, "Attemped to declare a variable that was previously used.\n");
 		}
@@ -289,15 +296,16 @@ ASTNode *Parser_let(Parser *par) {
 	return statement;
 }
 
-// input ::= "INPUT" ["INT" | "FLOAT" | "BOOL"] ident nl
+// input ::= "INPUT" variable ident nl
 ASTNode *Parser_input(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
 
-	if (par->curToken->type == INT || par->curToken->type == FLOAT || par->curToken->type == BOOL) {
+	ASTNode *variable = Parser_variable(par);
+	if (variable != NULL) {
 		// declaring a new symbol 
-		TokenType varType = par->curToken->type;
-		Parser_nextToken(par);
+		TokenType varType = variable->token->type;
+		ASTNode_kill(variable);
 		if (AST_seenSymbol(par->ast, par->curToken->text)) {
 			Parser_abort(par, "Attemped to declare a variable that was previously used.\n");
 		}
@@ -428,11 +436,11 @@ ASTNode *Parser_unary(Parser *par) {
 	return unary;
 }
 
-// primary ::= number | ident
+// primary ::= number | ident | string
 ASTNode *Parser_primary(Parser *par) {
 	ASTNode *primary = ASTNode_create(par->curToken);
 
-	if (par->curToken->type == NUMBER) {
+	if (par->curToken->type == NUMBER || par->curToken->type == STRING) {
 		Parser_nextToken(par);
 	} else if (par->curToken->type == IDENT) {
 		if (!(AST_seenSymbol(par->ast, par->curToken->text))) {
@@ -444,6 +452,23 @@ ASTNode *Parser_primary(Parser *par) {
 	}
 
 	return primary;
+}
+
+// variable ::= ["INT" | "FLOAT" | "BOOL" | "STRING"]
+ASTNode *Parser_variable(Parser *par) {
+	ASTNode *variable = NULL;
+
+	switch (par->curToken->type) {
+		case INT:
+		case FLOAT:
+		case BOOL:
+		case STRING:
+			variable = ASTNode_create(par->curToken);
+			Parser_nextToken(par);
+			break;
+	}
+
+	return variable;
 }
 
 // nl ::= '\n'+

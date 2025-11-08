@@ -2,20 +2,30 @@ program    ::= {statement}
 statement  ::= print | if | while | for | label | goto | let | input
 print      ::= "PRINT" (expression | string) nl
 if         ::= "IF" comparison "THEN" nl {statement} {"ELSEIF" comparison "THEN" nl {statement}} [ELSE nl {statement}] "ENDIF" nl
-while      ::= "WHILE" ("INT" | "FLOAT") comparison "REPEAT" nl {statement} "ENDWHILE" nl
-for        ::= "FOR" ident "=" expression "TO" expression "REPEAT" nl {statement} "ENDFOR" nl
+while      ::= "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
+for        ::= "FOR" ["INT" || "FLOAT"] ident "=" expression "TO" expression "REPEAT" nl {statement} "ENDFOR" nl
 label      ::= "LABEL" ident nl
 goto       ::= "GOTO" ident nl
-let        ::= "LET" ["INT" | "FLOAT" | "BOOL"] ident "=" expression nl
-input      ::= "INPUT" ["INT" | "FLOAT" | "BOOL"] ident nl
+let        ::= "LET" variable ident "=" expression nl
+input      ::= "INPUT" variable ident nl
 comparison ::= expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)+
 expression ::= ["("] term [( "-" | "+" ) expression] [")"]
 term       ::= unary {( "/" | "*" ) unary}
 unary      ::= ["+" | "-"] primary
 primary    ::= number | ident
+variable   ::= ["INT" | "FLOAT" | "BOOL" | "STRING"]
 nl         ::= '\n'+
 
 notes:
 For let, you only need to declare a variable's type once. If you try to do it again, the compiler will throw an error.
 For for, the loops are inclusive, so "FOR INT a = 0 TO 1" will run twice, once with a = 0 and once with a = 1.
-
+Allowed additions:
+	INT = INT + INT
+	INT = INT + FLOAT
+	INT = FLOAT + INT
+	INT = FLOAT + FLOAT
+	FLOAT = INT + INT
+	FLOAT = INT + FLOAT
+	FLOAT = FLOAT + INT
+	FLOAT = FLOAT + FLOAT
+	STRING = STRING + STRING
