@@ -4,4 +4,5 @@ PRINT x + y
 
 PRINT " "
 LET STRING z = "hi!"
-PRINT z
+LET STRING zz = 3
+PRINT zz

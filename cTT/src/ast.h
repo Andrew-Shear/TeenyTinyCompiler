@@ -11,6 +11,7 @@
 typedef struct ASTNode {
 	Token *token;
 	List *children;
+	TokenType subType;
 } ASTNode;
 
 typedef struct AST {
@@ -18,6 +19,7 @@ typedef struct AST {
 	List *symbols;
 	List *labelsDeclared;
 	List *labelsGotoed;
+	Lexer *lex;
 } AST;
 
 
@@ -26,9 +28,11 @@ typedef struct Symbol {
 	TokenType type;
 } Symbol;
 
-AST *AST_create();
+AST *AST_create(Lexer *lex);
 
 ASTNode *ASTNode_create(Token *t);
+
+void AST_abort(const char *message);
 
 void ASTNode_add(ASTNode *parent, ASTNode *child);
 
@@ -37,6 +41,16 @@ void AST_add(AST *parent, ASTNode *child);
 void AST_emitSymbolHeaders(List *symbols);
 
 void ASTNode_kill(ASTNode *node);
+
+void AST_check(AST *ast);
+
+TokenType AST_checkStatement(ASTNode *node);
+
+TokenType AST_checkComparison(ASTNode *node);
+
+TokenType AST_checkExpression(ASTNode *node);
+
+TokenType AST_getSubType(TokenType type1, TokenType type2, TokenType operation);
 
 void AST_emit(AST *ast);
 

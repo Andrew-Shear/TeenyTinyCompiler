@@ -14,4 +14,4 @@ $(TEENYS):
 		@$(CC) out.c -o $(notdir $(patsubst %.teeny,%,$@))
 		@rm .header
 		@rm .code
-		@rm out.c
+		#rm out.c

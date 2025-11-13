@@ -20,12 +20,28 @@ notes:
 For let, you only need to declare a variable's type once. If you try to do it again, the compiler will throw an error.
 For for, the loops are inclusive, so "FOR INT a = 0 TO 1" will run twice, once with a = 0 and once with a = 1.
 Allowed additions:
-	INT = INT + INT
-	INT = INT + FLOAT
-	INT = FLOAT + INT
-	INT = FLOAT + FLOAT
-	FLOAT = INT + INT
-	FLOAT = INT + FLOAT
-	FLOAT = FLOAT + INT
-	FLOAT = FLOAT + FLOAT
+	INT = INT +-*/ INT
+	INT = INT +-*/ FLOAT
+	INT = FLOAT +-*/ INT
+	INT = FLOAT +-*/ FLOAT
+	FLOAT = INT +-*/ INT
+	FLOAT = INT +-*/ FLOAT
+	FLOAT = FLOAT +-*/ INT
+	FLOAT = FLOAT +-*/ FLOAT
 	STRING = STRING + STRING
+
+AST:
+print      ::= statement.children = string | expression
+if         ::= statement.children = comparison, {statement}, [ELSEIF | ELSE]
+while      ::= statement.children = comparison, {statement}
+for        ::= statement.children = IDENT, expression, expression, {statement}
+label      ::= statement.children = IDENT
+goto       ::= statement.children = IDENT
+let        ::= statement.children = IDENT, expression
+input      ::= statement.children = IDENT
+comparison ::= comparison.children = cO
+cO         ::= comparisonOperator.children = comparison | expression, comparison | expression
+//  if expression->token->text is an operator:
+expression ::= expression.children = ["("], expression, expression
+// 	else:
+expression ::= expression.children = ()

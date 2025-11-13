@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
 	Emitter_create("out.c");
 
-	ast = AST_create();
+	ast = AST_create(lex);
 	par = Parser_create(lex, ast);
 	
 	Parser_program(par);

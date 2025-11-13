@@ -53,7 +53,7 @@ ASTNode *Parser_unary(Parser *par);
 
 ASTNode *Parser_primary(Parser *par);
 
-ASTNode *Parser_variable(Parser *par);
+TokenType Parser_variable(Parser *par);
 
 void Parser_nl(Parser *par);
 

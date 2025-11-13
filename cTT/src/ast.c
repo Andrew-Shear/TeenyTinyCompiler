@@ -5,7 +5,7 @@
 // only use when needed.
 AST *astGlobal;
 
-AST *AST_create() {
+AST *AST_create(Lexer *lex) {
 	AST *ast = malloc(sizeof(AST));
 	if (ast == NULL) {
 		return NULL;
@@ -43,6 +43,8 @@ AST *AST_create() {
 		exit(1);
 	}
 
+	ast->lex = lex;
+
 	astGlobal = ast;
 	return ast;
 }
@@ -56,7 +58,15 @@ ASTNode *ASTNode_create(Token *t) {
 
 	astNode->token = Token_copy(t);
 	astNode->children = List_create();
+	astNode->subType = eOF;
 	return astNode;
+}
+
+void AST_abort(const char *message) {
+	printf("ERROR AT LINE #%d:\n", astGlobal->lex->lineNumber);
+	printf(message);
+	printf("\n");
+	exit(1);
 }
 
 void ASTNode_add(ASTNode *parent, ASTNode *child) {
@@ -80,6 +90,91 @@ void ASTNode_kill(ASTNode *node) {
 	free(node);
 }
 
+void AST_check(AST *ast) {
+	LIST_FOREACH(ast->children, first, next, cur) {
+		AST_checkStatement((ASTNode *) cur->value);
+	}
+}
+
+TokenType AST_checkStatement(ASTNode *statement) {
+	switch (statement->token->type) {
+		case PRINT:
+			// need to check if the expression is valid
+			ASTNode *child = (ASTNode *) statement->children->first->value;
+			AST_checkExpression(child);
+			break;
+
+		case IF:
+		case ELSEIF:
+			ListNode *current = statement->children->first;
+			AST_checkComparison((ASTNode *) current->value);
+			current = current->next;
+			ASTNode *temp = (ASTNode *) current->value;
+			while (temp != NULL && temp->token->type != ELSEIF && temp->token->type != ELSE) {
+				AST_checkStatement(temp);
+			}
+			break;
+	}
+}
+
+TokenType AST_checkComparison(ASTNode *comparison) {
+	return eOF;
+}
+
+TokenType AST_checkExpression(ASTNode *expression) {
+	if (!(expression->token->type == PLUS
+		|| expression->token->type == MINUS
+		|| expression->token->type == ASTERISK 
+		|| expression->token->type == SLASH)) {
+		expression->subType = expression->token->type;
+		return expression->subType;
+	}
+
+	ListNode *child1 = expression->children->first;
+	ASTNode *child1Node = (ASTNode *) child1->value;
+	if (child1Node->token->type == LEFTPAREN) {
+		child1 = child1->next;
+		child1Node = (ASTNode *) child1->value;
+	}
+
+	TokenType type1 = AST_checkExpression(child1Node);
+	ASTNode *child2Node = (ASTNode *) child1->next->value;
+	TokenType type2 = AST_checkExpression(child2Node);
+	expression->subType = AST_getSubType(type1, type2, expression->token->type);
+	return expression->subType;
+}
+
+TokenType AST_getSubType(TokenType type1, TokenType type2, TokenType operation) {
+	switch (operation) {
+		case PLUS:
+			if (type1 == INT && type2 == INT)
+				return INT;
+			else if ((type1 == INT || type1 == FLOAT) && (type2 == INT || type2 == FLOAT))
+				return FLOAT;
+			else if (type1 == STRING && type2 == STRING)
+				return STRING;
+			else
+				AST_abort("Invalid types in operation.");
+			break;
+
+		case MINUS:
+		case ASTERISK:
+		case SLASH:
+			if (type1 == INT && type2 == INT)
+				return INT;
+			else if ((type1 == INT || type1 == FLOAT) && (type2 == INT || type2 == FLOAT))
+				return FLOAT;
+			else
+				AST_abort("Invalid types in operation.");
+			break;
+
+		default:
+			AST_abort("Invalid operation.");
+			break;
+	}
+	return eOF;
+}
+
 void AST_emit(AST *ast) {
 	Emitter_emitLine("#include <stdio.h>");
 	Emitter_emitLine("int main (void) {");
@@ -96,13 +191,13 @@ void AST_emit(AST *ast) {
 void AST_emitSymbolHeaders(List *symbols) {
 	LIST_FOREACH(symbols, first, next, cur) {
 		Symbol *s = (Symbol *) cur->value;
-		if (s->type == FLOAT)
+		if (s->type == FLOAT_VAR)
 			Emitter_emit("float ");
-		else if (s->type == INT)
+		else if (s->type == INT_VAR)
 			Emitter_emit("int ");
-		else if (s->type == BOOL)
+		else if (s->type == BOOL_VAR)
 			Emitter_emit("int ");	
-		else if (s->type == STRING)
+		else if (s->type == STRING_VAR)
 			Emitter_emit("char *");
 		Emitter_emit(s->text);
 		Emitter_emitLine(";");
@@ -142,12 +237,12 @@ void AST_statement(ASTNode *statement) {
 				Emitter_emit("printf(\"");
 				Emitter_emit(temp->token->text);
 				Emitter_emitLine("\\n\");");
-			} else if (AST_getSymbolType(temp->token->text) == INT) {
+			} else if (AST_getSymbolType(temp->token->text) == INT_VAR) {
 				Emitter_emit("printf(\"%");
 				Emitter_emit("d\\n\", ");
 				AST_expression(temp);
 				Emitter_emitLine(");");
-			} else if (AST_getSymbolType(temp->token->text) == STRING) {
+			} else if (AST_getSymbolType(temp->token->text) == STRING_VAR) {
 				Emitter_emit("printf(\"%");
 				Emitter_emit("s\\n\", ");
 				Emitter_emit(temp->token->text);
@@ -170,7 +265,7 @@ void AST_statement(ASTNode *statement) {
 			Emitter_emitLine("){");
 			ASTNode_kill(temp);
 
-			temp = List_shift(statement->children);
+			temp = (ASTNode *) List_shift(statement->children);
 			while (temp != NULL && temp->token->type != ELSEIF && temp->token->type != ELSE) {
 				AST_statement(temp);
 				ASTNode_kill(temp);
@@ -230,7 +325,7 @@ void AST_statement(ASTNode *statement) {
 
 			Emitter_emit("; ");
 			Emitter_emit(temp->token->text);
-			Emitter_emit("++) {");
+			Emitter_emitLine("++) {");
 			ASTNode_kill(temp2);
 
 			while (statement->children->first != NULL) {
@@ -276,7 +371,7 @@ void AST_statement(ASTNode *statement) {
 		case INPUT:
 			temp = (ASTNode *) List_shift(statement->children);
 			Emitter_emit("if(0 == scanf(\"%");
-			if (AST_getSymbolType(temp->token->text) == INT)
+			if (AST_getSymbolType(temp->token->text) == INT_VAR)
 				Emitter_emit("d\", &");
 			else
 				Emitter_emit("f\", &");
@@ -335,7 +430,7 @@ void AST_comparison(ASTNode *comparison) {
 //  if expression->token->text is an operator:
 // 		expression.children = List(["("], expression, expression)
 // 	else:
-// 		expression.children = List(["("])
+// 		expression.children = List()
 void AST_expression(ASTNode *expression) {
 	if (expression->token->type == STRING) {
 		Emitter_emit("\"");

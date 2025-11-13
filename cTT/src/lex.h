@@ -47,7 +47,12 @@ typedef enum TokenType {
 	GT = 210,
 	GTEQ = 211,
 	LEFTPAREN = 212,
-	RIGHTPAREN = 213
+	RIGHTPAREN = 213,
+	NOT_VAR = 301,
+	INT_VAR = 302,
+	STRING_VAR = 303,
+	FLOAT_VAR = 304,
+	BOOL_VAR = 305
 } TokenType;
 
 struct Token;
@@ -76,10 +81,10 @@ const static struct {
 	{FOR, "FOR"},
 	{TO, "TO"},
 	{ENDFOR, "ENDFOR"},
-	{INT, "INT"},
-	{FLOAT, "FLOAT"},
-	{BOOL, "BOOL"},
-	{STRING, "STRING"}
+	{INT_VAR, "INT"},
+	{FLOAT_VAR, "FLOAT"},
+	{BOOL_VAR, "BOOL"},
+	{STRING_VAR, "STRING"}
 };
 
 Lexer *Lexer_create(FILE *source);

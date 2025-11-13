@@ -201,12 +201,10 @@ ASTNode *Parser_for(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
 
-	ASTNode *variable = Parser_variable(par);
-	if (variable != NULL) {
+	TokenType variable = Parser_variable(par);
+	if (variable != NOT_VAR) {
 		// declaring a new symbol 
-		TokenType varType = variable->token->type;
-		ASTNode_kill(variable);
-		if (varType != INT && varType != FLOAT) {
+		if (variable != INT_VAR && variable != FLOAT_VAR) {
 			Parser_abort(par, "Attempted to create a for loop without an integer or float.");
 		}
 
@@ -214,7 +212,7 @@ ASTNode *Parser_for(Parser *par) {
 			Parser_abort(par, "Attemped to declare a variable that was previously used.");
 		}
 
-		AST_addSymbol(par->ast, par->curToken->text, varType);
+		AST_addSymbol(par->ast, par->curToken->text, variable);
 	} else {
 		// not declaring a new symbol, so if i haven't seen it, kill the program.
 		if (!(AST_seenSymbol(par->ast, par->curToken->text))){
@@ -272,19 +270,20 @@ ASTNode *Parser_let(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
 
-	ASTNode *variable = Parser_variable(par);
-	if (variable != NULL) {
+	printf("next token: %s\n", par->curToken->text);
+	printf("next token type: %d\n", par->curToken->type);
+	TokenType variable = Parser_variable(par);
+	printf("variable type: %d\n", variable);
+	if (variable != NOT_VAR) {
 		// declaring a new symbol 
-		TokenType varType = variable->token->type;
-		ASTNode_kill(variable);
 		if (AST_seenSymbol(par->ast, par->curToken->text)) {
-			Parser_abort(par, "Attemped to declare a variable that was previously used.\n");
+			Parser_abort(par, "Attemped to declare a variable that was previously used.");
 		}
-		AST_addSymbol(par->ast, par->curToken->text, varType);
+		AST_addSymbol(par->ast, par->curToken->text, variable);
 	} else {
 		// not declaring a new symbol, so if i haven't seen it, kill the program.
 		if (!(AST_seenSymbol(par->ast, par->curToken->text))){
-			Parser_abort(par, "Attempted to set a new variable without declaring a type.\n");
+			Parser_abort(par, "Attempted to set a new variable without declaring a type.");
 		}
 	}
 
@@ -301,15 +300,13 @@ ASTNode *Parser_input(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
 
-	ASTNode *variable = Parser_variable(par);
-	if (variable != NULL) {
+	TokenType variable = Parser_variable(par);
+	if (variable != NOT_VAR) {
 		// declaring a new symbol 
-		TokenType varType = variable->token->type;
-		ASTNode_kill(variable);
 		if (AST_seenSymbol(par->ast, par->curToken->text)) {
 			Parser_abort(par, "Attemped to declare a variable that was previously used.\n");
 		}
-		AST_addSymbol(par->ast, par->curToken->text, varType);
+		AST_addSymbol(par->ast, par->curToken->text, variable);
 	} else {
 		// not declaring a new symbol, so if i haven't seen it, kill the program.
 		if (!(AST_seenSymbol(par->ast, par->curToken->text))){
@@ -455,15 +452,15 @@ ASTNode *Parser_primary(Parser *par) {
 }
 
 // variable ::= ["INT" | "FLOAT" | "BOOL" | "STRING"]
-ASTNode *Parser_variable(Parser *par) {
-	ASTNode *variable = NULL;
+TokenType Parser_variable(Parser *par) {
+	TokenType variable = NOT_VAR;
 
 	switch (par->curToken->type) {
-		case INT:
-		case FLOAT:
-		case BOOL:
-		case STRING:
-			variable = ASTNode_create(par->curToken);
+		case INT_VAR:
+		case FLOAT_VAR:
+		case BOOL_VAR:
+		case STRING_VAR:
+			variable = par->curToken->type;
 			Parser_nextToken(par);
 			break;
 	}
