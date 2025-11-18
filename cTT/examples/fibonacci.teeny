@@ -1,6 +1,6 @@
 PRINT "How many fibonacci numbers do you want?"
 INPUT INT nums
-PRINT ""
+PRINT " "
 
 LET INT a = 0
 LET INT b = 1

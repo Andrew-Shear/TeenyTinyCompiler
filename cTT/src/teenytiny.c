@@ -45,6 +45,8 @@ int main(int argc, char *argv[]) {
 	
 	Parser_program(par);
 
+	AST_check(ast);
+
 	AST_emit(ast);
 	Emitter_writeFile();
 	printf("Compiling completed.\n\n");

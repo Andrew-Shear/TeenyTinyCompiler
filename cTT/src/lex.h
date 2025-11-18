@@ -13,9 +13,10 @@ enum TokenType;
 typedef enum TokenType {
 	eOF = -1,
 	NEWLINE = 0,
-	NUMBER = 1,
-	IDENT = 2,
-	STRING = 3,
+	NUMBERINT = 1,
+	NUMBERFLOAT = 2,
+	IDENT = 3,
+	STRING = 4,
 	LABEL = 101,
 	GOTO = 102,
 	PRINT = 103,

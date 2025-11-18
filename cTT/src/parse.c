@@ -114,17 +114,11 @@ ASTNode *Parser_statement(Parser *par) {
 	return statement;
 }
 
-// print ::= "PRINT" (expression | string) nl
+// print ::= "PRINT" expression nl
 ASTNode *Parser_print(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
-	if (par->curToken->type == STRING) {
-		ASTNode *child = ASTNode_create(par->curToken);
-		Parser_nextToken(par);
-		ASTNode_add(statement, child);
-	} else {
-		ASTNode_add(statement, Parser_expression(par));
-	}
+	ASTNode_add(statement, Parser_expression(par));
 
 	return statement;
 }
@@ -270,10 +264,7 @@ ASTNode *Parser_let(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
 
-	printf("next token: %s\n", par->curToken->text);
-	printf("next token type: %d\n", par->curToken->type);
 	TokenType variable = Parser_variable(par);
-	printf("variable type: %d\n", variable);
 	if (variable != NOT_VAR) {
 		// declaring a new symbol 
 		if (AST_seenSymbol(par->ast, par->curToken->text)) {
@@ -419,7 +410,7 @@ ASTNode *Parser_unary(Parser *par) {
 
 		Token *zeroToken = malloc(sizeof(Token));
 		zeroToken->text = strdup("0");
-		zeroToken->type = NUMBER;
+		zeroToken->type = NUMBERINT;
 
 		ASTNode *zeroNode = ASTNode_create(zeroToken);
 
@@ -433,11 +424,11 @@ ASTNode *Parser_unary(Parser *par) {
 	return unary;
 }
 
-// primary ::= number | ident | string
+// primary ::= number | string | ident
 ASTNode *Parser_primary(Parser *par) {
 	ASTNode *primary = ASTNode_create(par->curToken);
 
-	if (par->curToken->type == NUMBER || par->curToken->type == STRING) {
+	if (par->curToken->type == NUMBERINT || NUMBERFLOAT || par->curToken->type == STRING) {
 		Parser_nextToken(par);
 	} else if (par->curToken->type == IDENT) {
 		if (!(AST_seenSymbol(par->ast, par->curToken->text))) {

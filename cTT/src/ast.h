@@ -60,6 +60,8 @@ void AST_killSymbols(AST *ast);
 
 void AST_statement(ASTNode *statement);
 
+int AST_isComparisonOperator(TokenType t);
+
 void AST_comparison(ASTNode *comparison);
 
 void AST_expression(ASTNode *expression);

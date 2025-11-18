@@ -6,3 +6,7 @@ PRINT " "
 LET STRING z = "hi!"
 LET STRING zz = 3
 PRINT zz
+
+FOR x = "hi!" TO 5 REPEAT
+	PRINT "this shouldn't work..."
+ENDFOR

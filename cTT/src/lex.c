@@ -219,6 +219,8 @@ void Lexer_readNumber(Lexer *lex, Token *t) {
 	while (isalnum(lex->nextChar)) {
 		Lexer_nextChar(lex);
 	}
+	t->type = NUMBERINT;
+
 	if (lex->nextChar == '.') {
 		// decimal
 		Lexer_nextChar(lex);
@@ -228,6 +230,7 @@ void Lexer_readNumber(Lexer *lex, Token *t) {
 		while (isalnum(lex->nextChar)) {
 			Lexer_nextChar(lex);
 		}
+		t->type = NUMBERFLOAT;
 	}
 	// lex->curChar is the last digit in the number.
 	// startPos is the first digit, endPos is the last digit
@@ -239,7 +242,6 @@ void Lexer_readNumber(Lexer *lex, Token *t) {
 	// now, the pointer is pointing to the character after, so we have to move one forward.
 	fgetc(lex->source);
 	t->text = strdup(num);
-	t->type = NUMBER;
 }
 
 void Lexer_readSymbol(Lexer *lex, Token *t) {

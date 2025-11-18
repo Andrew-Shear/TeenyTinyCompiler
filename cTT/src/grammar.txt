@@ -1,6 +1,6 @@
 program    ::= {statement}
 statement  ::= print | if | while | for | label | goto | let | input
-print      ::= "PRINT" (expression | string) nl
+print      ::= "PRINT" expression nl
 if         ::= "IF" comparison "THEN" nl {statement} {"ELSEIF" comparison "THEN" nl {statement}} [ELSE nl {statement}] "ENDIF" nl
 while      ::= "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
 for        ::= "FOR" ["INT" || "FLOAT"] ident "=" expression "TO" expression "REPEAT" nl {statement} "ENDFOR" nl
@@ -12,36 +12,49 @@ comparison ::= expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)+
 expression ::= ["("] term [( "-" | "+" ) expression] [")"]
 term       ::= unary {( "/" | "*" ) unary}
 unary      ::= ["+" | "-"] primary
-primary    ::= number | ident
+primary    ::= number | string | ident
 variable   ::= ["INT" | "FLOAT" | "BOOL" | "STRING"]
 nl         ::= '\n'+
 
-notes:
-For let, you only need to declare a variable's type once. If you try to do it again, the compiler will throw an error.
-For for, the loops are inclusive, so "FOR INT a = 0 TO 1" will run twice, once with a = 0 and once with a = 1.
-Allowed additions:
-	INT = INT +-*/ INT
-	INT = INT +-*/ FLOAT
-	INT = FLOAT +-*/ INT
-	INT = FLOAT +-*/ FLOAT
-	FLOAT = INT +-*/ INT
-	FLOAT = INT +-*/ FLOAT
-	FLOAT = FLOAT +-*/ INT
-	FLOAT = FLOAT +-*/ FLOAT
-	STRING = STRING + STRING
+
 
 AST:
-print      ::= statement.children = string | expression
+print      ::= statement.children = expression
 if         ::= statement.children = comparison, {statement}, [ELSEIF | ELSE]
+else	   ::= statement.children = {statement}
 while      ::= statement.children = comparison, {statement}
 for        ::= statement.children = IDENT, expression, expression, {statement}
 label      ::= statement.children = IDENT
 goto       ::= statement.children = IDENT
 let        ::= statement.children = IDENT, expression
 input      ::= statement.children = IDENT
-comparison ::= comparison.children = cO
-cO         ::= comparisonOperator.children = comparison | expression, comparison | expression
+comparison ::= comparison.children = comparison | expression, comparison | expression
 //  if expression->token->text is an operator:
 expression ::= expression.children = ["("], expression, expression
 // 	else:
 expression ::= expression.children = ()
+
+
+
+notes:
+For let, you only need to declare a variable's type once. If you try to do it again, the compiler will throw an error.
+For for, the loops are inclusive, so "FOR INT a = 0 TO 1" will run twice, once with a = 0 and once with a = 1.
+Allowed operations:
+	INT = INT +-*/ INT 
+	INT = INT +-*/ FLOAT 
+	INT = FLOAT +-*/ INT 
+	INT = FLOAT +-*/ FLOAT 
+	FLOAT = INT +-*/ INT 
+	FLOAT = INT +-*/ FLOAT 
+	FLOAT = FLOAT +-*/ INT 
+	FLOAT = FLOAT +-*/ FLOAT 
+	STRING = STRING + STRING
+
+Allowed comparisons:
+	INT >>=<<===!= INT 
+	INT >>=<<===!= FLOAT 
+	FLOAT >>=<<===!= INT 
+	FLOAT >>=<<===!= FLOAT 
+	STRING ==!= STRING
+	BOOL == != BOOL
+	
