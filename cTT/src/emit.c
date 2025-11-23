@@ -8,6 +8,11 @@ Emitter *emit;
 void Emitter_create(char *path) {
 	Emitter *emitter = malloc(sizeof(Emitter));
 	emitter->fullPath = strdup(path);
+	
+	// this is to make sure it exists for makefile
+	FILE *outputFile = fopen(emitter->fullPath, "w");
+	fclose(outputFile);
+
 	emitter->header = fopen(HEADER_NAME, "w");
 	emitter->code = fopen(CODE_NAME, "w");
 

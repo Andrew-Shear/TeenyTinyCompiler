@@ -4,9 +4,9 @@ PRINT x + y
 
 PRINT " "
 LET STRING z = "hi!"
-LET STRING zz = 3
+LET STRING zz = ""
 PRINT zz
 
-FOR x = "hi!" TO 5 REPEAT
-	PRINT "this shouldn't work..."
+FOR x = 1 TO 5 REPEAT
+	PRINT "this should work..."
 ENDFOR

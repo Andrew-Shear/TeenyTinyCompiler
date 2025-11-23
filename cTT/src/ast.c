@@ -143,6 +143,7 @@ TokenType AST_checkStatement(ASTNode *statement) {
 		case FOR:
 			current = statement->children->first;
 			TokenType symbol = AST_getSymbolType(((ASTNode *) current->value)->token->text);
+			((ASTNode *) current->value)->subType = symbol;
 			current = current->next;
 			TokenType expression1 = AST_checkExpression((ASTNode *) current->value);
 			current = current->next;
@@ -162,6 +163,27 @@ TokenType AST_checkStatement(ASTNode *statement) {
 				AST_checkStatement(temp);
 				current = current->next;
 			}
+			break;
+
+		case LABEL:
+		case GOTO:
+		case INPUT:
+			// it's just an identifier, so nothing to check
+			current = statement->children->first;
+			temp = (ASTNode *) current->value;
+			temp->subType = AST_getSymbolType(temp->token->text);
+			break;
+
+		case LET:
+			current = statement->children->first;
+			temp = (ASTNode *) current->value;
+			TokenType symbolType = AST_getSymbolType(temp->token->text);
+			temp->subType = symbolType;
+
+			current = current->next;
+			temp = (ASTNode *) current->value;
+			TokenType expType = AST_checkExpression(temp);
+			AST_getSubType(symbolType, expType, EQ);
 			break;
 	}
 }
@@ -269,6 +291,20 @@ TokenType AST_getSubType(TokenType type1, TokenType type2, TokenType operation) 
 				return BOOL_VAR;
 			else
 				AST_abort("Invalid types in equals/not equals comparison.");
+			break;
+
+		case EQ:
+			// this one is used for LET, return val doesn't really matter
+			if (type1 == INT_VAR && type2 == INT_VAR)
+				return INT_VAR;
+			else if ((type1 == INT_VAR || type1 == FLOAT_VAR) && (type2 == INT_VAR || type2 == FLOAT_VAR))
+				return FLOAT_VAR;
+			else if (type1 == STRING_VAR && type2 == STRING_VAR)
+				return STRING_VAR;
+			else if (type1 == BOOL_VAR && type2 == BOOL_VAR)
+				return BOOL_VAR;
+			else
+				AST_abort("Invalid types in equals.");
 			break;
 
 		default:
