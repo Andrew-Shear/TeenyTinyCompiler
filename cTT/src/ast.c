@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// only use when needed.
+// only use when needed because i said so, probably could change?
 AST *astGlobal;
 
 AST *AST_create(Lexer *lex) {
