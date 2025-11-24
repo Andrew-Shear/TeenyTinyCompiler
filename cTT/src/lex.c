@@ -39,8 +39,7 @@ char Lexer_peek(Lexer *lex) {
 
 void Lexer_abort(Lexer *lex, Token *t, char *message) {
 	printf("ERROR AT LINE #%d:\n", lex->lineNumber);
-	printf(message);
-	printf("\n");
+	printf("%s\n", message);
 	Lexer_kill(lex);
 	Token_kill(t);
 	exit(1);

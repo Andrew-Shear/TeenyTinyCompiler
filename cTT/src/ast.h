@@ -44,7 +44,7 @@ void ASTNode_kill(ASTNode *node);
 
 void AST_check(AST *ast);
 
-TokenType AST_checkStatement(ASTNode *node);
+void AST_checkStatement(ASTNode *node);
 
 TokenType AST_checkComparison(ASTNode *node);
 

@@ -64,8 +64,7 @@ ASTNode *ASTNode_create(Token *t) {
 
 void AST_abort(const char *message) {
 	printf("ERROR AT LINE #%d:\n", astGlobal->lex->lineNumber);
-	printf(message);
-	printf("\n");
+	printf("%s\n", message);
 	exit(1);
 }
 
@@ -96,15 +95,15 @@ void AST_check(AST *ast) {
 	}
 }
 
-TokenType AST_checkStatement(ASTNode *statement) {
+void AST_checkStatement(ASTNode *statement) {
 	switch (statement->token->type) {
 		ListNode *current;
 		ASTNode *temp;
 
 		case PRINT:
 			// need to check if the expression is valid
-			ASTNode *child = (ASTNode *) statement->children->first->value;
-			AST_checkExpression(child);
+			temp = (ASTNode *) statement->children->first->value;
+			AST_checkExpression(temp);
 			break;
 
 		case IF:
@@ -185,6 +184,10 @@ TokenType AST_checkStatement(ASTNode *statement) {
 			TokenType expType = AST_checkExpression(temp);
 			AST_getSubType(symbolType, expType, EQ);
 			break;
+
+		default:
+			AST_abort("How did we get here?");
+			break;
 	}
 }
 
@@ -229,6 +232,9 @@ TokenType AST_checkExpression(ASTNode *expression) {
 				break;
 			case BOOL:
 				expression->subType = BOOL_VAR;
+				break;
+			default:
+				AST_abort("checkExpression how did I get here?");
 				break;
 		}
 		return expression->subType;
@@ -311,7 +317,7 @@ TokenType AST_getSubType(TokenType type1, TokenType type2, TokenType operation) 
 			AST_abort("Invalid operation.");
 			break;
 	}
-	AST_abort("How did I get here?");
+	AST_abort("getSubType how did I get here?");
 	return eOF;
 }
 
@@ -524,6 +530,10 @@ void AST_statement(ASTNode *statement) {
 			Emitter_emit("scanf(\"%");
 			Emitter_emitLine("*s\");");
 			Emitter_emitLine("}");
+			break;
+
+		default:
+			AST_abort("checkStatement how did I get here?");
 			break;
 	}
 	if (temp != NULL) {

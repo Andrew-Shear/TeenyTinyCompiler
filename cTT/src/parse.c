@@ -34,8 +34,7 @@ void Parser_nextToken(Parser *par) {
 
 void Parser_abort(Parser *par, char *message) {
 	printf("ERROR AT LINE #%d:\n", par->lex->lineNumber);
-	printf(message);
-	printf("\n");
+	printf("%s\n", message);
 	Lexer_kill(par->lex);
 	AST_kill(par->ast);
 	Parser_kill(par);
@@ -453,6 +452,10 @@ TokenType Parser_variable(Parser *par) {
 		case STRING_VAR:
 			variable = par->curToken->type;
 			Parser_nextToken(par);
+			break;
+
+		default:
+			variable = NOT_VAR;
 			break;
 	}
 

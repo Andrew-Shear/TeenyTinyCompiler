@@ -1,2 +1,3 @@
 pythonTT/__pycache__/
 *.exe
+.ccls-cache/
