@@ -40,7 +40,6 @@ char Lexer_peek(Lexer *lex) {
 void Lexer_abort(Lexer *lex, Token *t, char *message) {
 	printf("ERROR AT LINE #%d:\n", lex->lineNumber);
 	printf("%s\n", message);
-	Lexer_kill(lex);
 	Token_kill(t);
 	exit(1);
 }
@@ -200,6 +199,7 @@ void Lexer_readString(Lexer *lex, Token *t) {
 	}
 	// endPos is where the ending " is
 	long endPos = ftell(lex->source)-2;	
+
 	fseek(lex->source, startPos, SEEK_SET);
 	char text[endPos-startPos+1];
 	fgets(text, endPos-startPos+1, lex->source);

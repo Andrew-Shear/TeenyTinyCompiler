@@ -35,9 +35,6 @@ void Parser_nextToken(Parser *par) {
 void Parser_abort(Parser *par, char *message) {
 	printf("ERROR AT LINE #%d:\n", par->lex->lineNumber);
 	printf("%s\n", message);
-	Lexer_kill(par->lex);
-	AST_kill(par->ast);
-	Parser_kill(par);
 	exit(1);
 }	
 
@@ -113,11 +110,11 @@ ASTNode *Parser_statement(Parser *par) {
 	return statement;
 }
 
-// print ::= "PRINT" expression nl
+// print ::= "PRINT" comparison nl
 ASTNode *Parser_print(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
-	ASTNode_add(statement, Parser_expression(par));
+	ASTNode_add(statement, Parser_comparison(par));
 
 	return statement;
 }
@@ -258,7 +255,7 @@ ASTNode *Parser_goto(Parser *par) {
 	return statement;
 }
 
-// let ::= "LET" variable ident "=" expression nl
+// let ::= "LET" variable ident "=" comparison nl
 ASTNode *Parser_let(Parser *par) {
 	ASTNode *statement = ASTNode_create(par->curToken);
 	Parser_nextToken(par);
@@ -280,7 +277,7 @@ ASTNode *Parser_let(Parser *par) {
 	ASTNode_add(statement, ASTNode_create(par->curToken));
 	Parser_match(par, IDENT);
 	Parser_match(par, EQ);
-	ASTNode_add(statement, Parser_expression(par));
+	ASTNode_add(statement, Parser_comparison(par));
 
 	return statement;
 }
@@ -310,11 +307,10 @@ ASTNode *Parser_input(Parser *par) {
 	return statement;
 }
 
-// comparison ::= expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)+
+// comparison ::= expression {("==" | "!=" | ">" | ">=" | "<" | "<=") expression}
 ASTNode *Parser_comparison(Parser *par) {
 	ASTNode *expression = Parser_expression(par);
-	ASTNode *comparison = ASTNode_create(par->curToken);
-	ASTNode_add(comparison, expression);
+	ASTNode *comparison;
 
 	if (par->curToken->type == GT   ||
 			par->curToken->type == GTEQ ||
@@ -322,12 +318,13 @@ ASTNode *Parser_comparison(Parser *par) {
 			par->curToken->type == LTEQ ||
 			par->curToken->type == EQEQ ||
 		par->curToken->type == NOTEQ) {
-		
+		comparison = ASTNode_create(par->curToken);
+		ASTNode_add(comparison, expression);
 		Parser_nextToken(par);
 		ASTNode_add(comparison, Parser_expression(par));
 	} else {
-		ASTNode_kill(comparison);
-		Parser_abort(par, "Expected comparison operator.");
+		// just an expression, no comparison
+		return expression;
 	}
 	
 	ASTNode *previous = comparison;

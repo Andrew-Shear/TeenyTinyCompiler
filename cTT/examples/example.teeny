@@ -1,0 +1,89 @@
+LET INT x = 3
+LET FLOAT y = 3.0
+LET BOOL z = 2 > 1
+LET STRING str = "Wow!"
+
+PRINT "str:"
+PRINT str
+PRINT "Testing inputs..."
+PRINT "Enter a number to be stored as an int:"
+INPUT x
+PRINT x
+PRINT "Enter a number to be stored as a float:"
+INPUT y
+PRINT y
+PRINT "Enter a number to be stored as a bool:"
+INPUT z
+PRINT z
+
+
+PRINT "Testing expressions..."
+LET x = 5 + 5
+LET y = 5 + 5
+PRINT "5 + 5:"
+PRINT 5 + 5
+PRINT x
+PRINT y
+PRINT "-------"
+
+LET x = 4.5 + 5
+LET y = 4.5 + 5
+PRINT "4.5 + 5:"
+PRINT 4.5 + 5
+PRINT x
+PRINT y
+PRINT "-------"
+
+LET x = 5 + 4.5
+LET y = 5 + 4.5
+PRINT "5 + 4.5:"
+PRINT 5 + 4.5
+PRINT x
+PRINT y
+PRINT "-------"
+
+LET x = 4.5 + 4.5
+LET y = 4.5 + 4.5
+PRINT "4.5 + 4.5:"
+PRINT 4.5 + 4.5
+PRINT x
+PRINT y
+PRINT "-------"
+
+PRINT ""
+PRINT "Testing comparisons..."
+LET x = 3
+LET y = 6
+PRINT z
+
+IF x == x THEN
+	PRINT "x == x"
+ENDIF
+
+IF x >= x THEN
+	PRINT "x >= x"
+ENDIF
+
+IF x >= y THEN
+	PRINT "x >= y"
+ENDIF
+
+IF x == y THEN
+	PRINT "x == y"
+ENDIF
+
+IF y == x THEN
+	PRINT "y == x"
+ENDIF
+
+IF y >= x THEN
+	PRINT "y >= x"
+ENDIF
+
+IF y >= y THEN
+	PRINT "y >= y"
+ENDIF
+
+IF y == y THEN
+	PRINT "y == y"
+ENDIF

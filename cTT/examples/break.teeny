@@ -1,8 +1,14 @@
+PRINT ""
+PRINT ""
+PRINT ""
+PRINT ""
+PRINT ""
+PRINT ""
 LET INT x = 3
 LET FLOAT y = 6.445
 PRINT x + y
 
-PRINT " "
+PRINT ""
 LET STRING z = "hi!"
 LET STRING zz = ""
 PRINT zz

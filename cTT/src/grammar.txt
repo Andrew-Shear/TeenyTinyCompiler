@@ -1,14 +1,14 @@
 program    ::= {statement}
 statement  ::= print | if | while | for | label | goto | let | input
-print      ::= "PRINT" expression nl
+print      ::= "PRINT" comparison nl
 if         ::= "IF" comparison "THEN" nl {statement} {"ELSEIF" comparison "THEN" nl {statement}} [ELSE nl {statement}] "ENDIF" nl
 while      ::= "WHILE" comparison "REPEAT" nl {statement} "ENDWHILE" nl
 for        ::= "FOR" ["INT" || "FLOAT"] ident "=" expression "TO" expression "REPEAT" nl {statement} "ENDFOR" nl
 label      ::= "LABEL" ident nl
 goto       ::= "GOTO" ident nl
-let        ::= "LET" variable ident "=" expression nl
+let        ::= "LET" variable ident "=" comparison nl
 input      ::= "INPUT" variable ident nl
-comparison ::= expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)+
+comparison ::= expression {("==" | "!=" | ">" | ">=" | "<" | "<=") expression}
 expression ::= ["("] term [( "-" | "+" ) expression] [")"]
 term       ::= unary {( "/" | "*" ) unary}
 unary      ::= ["+" | "-"] primary
@@ -28,7 +28,13 @@ label      ::= statement.children = IDENT
 goto       ::= statement.children = IDENT
 let        ::= statement.children = IDENT, expression
 input      ::= statement.children = IDENT
+comparison ::= comparison.children = ()
+
+//  if comparison->token->text is a comparison operator:
 comparison ::= comparison.children = comparison | expression, comparison | expression
+// 	else:
+comparison ::= comparison.children = ()
+
 //  if expression->token->text is an operator:
 expression ::= expression.children = ["("], expression, expression
 // 	else:
