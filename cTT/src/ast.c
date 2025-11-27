@@ -165,15 +165,11 @@ void AST_checkStatement(ASTNode *statement) {
 		case LABEL:
 		case GOTO:
 		case INPUT:
-			if (astGlobal->seenStrInput == 0) {
-				astGlobal->seenStrInput = 1;
-			}
-
 			current = statement->children->first;
 			temp = (ASTNode *) current->value;
 			temp->subType = AST_getSymbolType(temp->token->text);
 			if (temp->subType == STRING_VAR)
-				AST_abort("Strings are not allowed in input.");
+				astGlobal->seenStrInput = 1;
 			break;
 
 		case LET:
@@ -268,8 +264,6 @@ TokenType AST_getSubType(TokenType type1, TokenType type2, TokenType operation) 
 				return INT_VAR;
 			else if ((type1 == INT_VAR || type1 == FLOAT_VAR) && (type2 == INT_VAR || type2 == FLOAT_VAR))
 				return FLOAT_VAR;
-			else if (type1 == STRING_VAR && type2 == STRING_VAR)
-				return STRING_VAR;
 			else
 				AST_abort("Invalid types in operation.");
 			break;
@@ -544,6 +538,7 @@ void AST_statement(ASTNode *statement) {
 			temp = (ASTNode *) List_shift(statement->children);
 			TokenType symType = AST_getSymbolType(temp->token->text); 
 			if (symType == STRING_VAR) {
+				Emitter_emitLine("while (getchar() != '\\n' && getchar() != EOF);");
 				Emitter_emit("getline(&");
 				Emitter_emit(temp->token->text);
 				Emitter_emitLine(", &len, stdin);");
@@ -615,14 +610,11 @@ void AST_comparison(ASTNode *comparison) {
 		Emitter_emit(") ");
 		Emitter_emit(comparison->token->text);
 		Emitter_emit(" 0");
-		return;
+	} else {
+		AST_comparison(child1);
+		Emitter_emit(comparison->token->text);
+		AST_comparison(child2);
 	}
-
-	AST_comparison(child1);
-
-	Emitter_emit(comparison->token->text);
-	
-	AST_comparison(child2);
 
 	ASTNode_kill(child1);
 	ASTNode_kill(child2);

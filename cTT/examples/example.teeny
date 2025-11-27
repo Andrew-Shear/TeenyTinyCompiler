@@ -15,6 +15,9 @@ PRINT y
 PRINT "Enter a number to be stored as a bool:"
 INPUT z
 PRINT z
+PRINT "Enter a number to be stored as a string:"
+INPUT str
+PRINT str
 
 
 PRINT "Testing expressions..."

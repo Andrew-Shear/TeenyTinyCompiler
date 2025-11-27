@@ -46,6 +46,7 @@ notes:
 For let, you only need to declare a variable's type once. If you try to do it again, the compiler will throw an error.
 For for, the loops are inclusive, so "FOR INT a = 0 TO 1" will run twice, once with a = 0 and once with a = 1.
 # declares a comment
+may add string addition once i find a good way to do it
 
 Allowed operations:
 	INT = INT +-*/ INT 
@@ -56,7 +57,6 @@ Allowed operations:
 	FLOAT = INT +-*/ FLOAT 
 	FLOAT = FLOAT +-*/ INT 
 	FLOAT = FLOAT +-*/ FLOAT 
-	STRING = STRING + STRING
 
 Allowed comparisons:
 	INT >>=<<===!= INT 

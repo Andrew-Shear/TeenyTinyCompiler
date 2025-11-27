@@ -1,4 +1,5 @@
 CFLAGS = -g -Wall
+CC = gcc
 
 TEENYS = $(wildcard ./*.teeny, examples/*.teeny)
 
