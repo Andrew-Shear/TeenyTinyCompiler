@@ -87,3 +87,7 @@ ENDIF
 IF y == y THEN
 	PRINT "y == y"
 ENDIF
+
+IF str == str THEN
+	PRINT "str == str"
+ENDIF

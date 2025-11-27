@@ -45,6 +45,8 @@ expression ::= expression.children = ()
 notes:
 For let, you only need to declare a variable's type once. If you try to do it again, the compiler will throw an error.
 For for, the loops are inclusive, so "FOR INT a = 0 TO 1" will run twice, once with a = 0 and once with a = 1.
+# declares a comment
+
 Allowed operations:
 	INT = INT +-*/ INT 
 	INT = INT +-*/ FLOAT 

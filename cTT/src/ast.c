@@ -301,6 +301,8 @@ TokenType AST_getSubType(TokenType type1, TokenType type2, TokenType operation) 
 				return BOOL_VAR;
 			else if (type1 == BOOL_VAR && type2 == BOOL_VAR)
 				return BOOL_VAR;
+			else if (type1 == STRING_VAR && type2 == STRING_VAR)
+				return STRING_VAR;
 			else
 				AST_abort("Invalid types in equals/not equals comparison.");
 			break;
@@ -604,19 +606,23 @@ void AST_comparison(ASTNode *comparison) {
 	ASTNode *child1 = (ASTNode *) List_shift(comparison->children);
 	ASTNode *child2 = (ASTNode *) List_shift(comparison->children);
 
-	if (AST_isComparisonOperator(child1->token->type)) {
+	if (child1->subType == STRING_VAR) {
+		// we're comparing two strings
+		Emitter_emit("strcmp(");
 		AST_comparison(child1);
-	} else {
-		AST_expression(child1);
+		Emitter_emit(", ");
+		AST_comparison(child2);
+		Emitter_emit(") ");
+		Emitter_emit(comparison->token->text);
+		Emitter_emit(" 0");
+		return;
 	}
+
+	AST_comparison(child1);
 
 	Emitter_emit(comparison->token->text);
 	
-	if (AST_isComparisonOperator(child2->token->type)) {
-		AST_comparison(child2);
-	} else {
-		AST_expression(child2);
-	}
+	AST_comparison(child2);
 
 	ASTNode_kill(child1);
 	ASTNode_kill(child2);
