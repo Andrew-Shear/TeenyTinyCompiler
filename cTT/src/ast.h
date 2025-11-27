@@ -20,6 +20,7 @@ typedef struct AST {
 	List *labelsDeclared;
 	List *labelsGotoed;
 	Lexer *lex;
+	int seenStrInput;
 } AST;
 
 
@@ -39,6 +40,8 @@ void ASTNode_add(ASTNode *parent, ASTNode *child);
 void AST_add(AST *parent, ASTNode *child);
 
 void AST_emitSymbolHeaders(List *symbols);
+
+void AST_emitSymbolFrees(List *symbols);
 
 void ASTNode_kill(ASTNode *node);
 

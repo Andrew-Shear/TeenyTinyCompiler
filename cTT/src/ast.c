@@ -44,6 +44,7 @@ AST *AST_create(Lexer *lex) {
 	}
 
 	ast->lex = lex;
+	ast->seenStrInput = 0;
 
 	astGlobal = ast;
 	return ast;
@@ -164,7 +165,10 @@ void AST_checkStatement(ASTNode *statement) {
 		case LABEL:
 		case GOTO:
 		case INPUT:
-			// it's just an identifier, so nothing to check
+			if (astGlobal->seenStrInput == 0) {
+				astGlobal->seenStrInput = 1;
+			}
+
 			current = statement->children->first;
 			temp = (ASTNode *) current->value;
 			temp->subType = AST_getSymbolType(temp->token->text);
@@ -325,14 +329,20 @@ TokenType AST_getSubType(TokenType type1, TokenType type2, TokenType operation) 
 
 void AST_emit(AST *ast) {
 	Emitter_emitLine("#include <stdio.h>");
+	Emitter_emitLine("#include <stdlib.h>");
 	Emitter_emitLine("#include <string.h>");
 	Emitter_emitLine("");
 	Emitter_emitLine("int main (void) {");
+
 	AST_emitSymbolHeaders(ast->symbols);
+	if (ast->seenStrInput)
+		Emitter_emitLine("size_t len = 0;");
 
 	LIST_FOREACH(ast->children, first, next, cur) {
 		AST_statement((ASTNode *) cur->value);
 	}
+
+	AST_emitSymbolFrees(ast->symbols);
 
 	Emitter_emitLine("return 0;");
 	Emitter_emitLine("}");
@@ -351,6 +361,17 @@ void AST_emitSymbolHeaders(List *symbols) {
 			Emitter_emit("char *");
 		Emitter_emit(s->text);
 		Emitter_emitLine(";");
+	}
+}
+
+void AST_emitSymbolFrees(List *symbols) {
+	LIST_FOREACH(symbols, first, next, cur) {
+		Symbol *s = (Symbol *) cur->value;
+		if (s->type == STRING_VAR) {
+			Emitter_emit("free(");
+			Emitter_emit(s->text);
+			Emitter_emitLine(");");
+		}
 	}
 }
 
@@ -503,8 +524,15 @@ void AST_statement(ASTNode *statement) {
 			Emitter_emit(" = ");
 
 			temp2 = (ASTNode *) List_shift(statement->children);
+			if (AST_getSymbolType(temp->token->text) == STRING_VAR) {
+				Emitter_emit("strdup(");
+				AST_comparison(temp2);
+				Emitter_emitLine(");");
+				break;
+			}
+
 			AST_comparison(temp2);
-			if (AST_getSymbolType(temp->token->text) == BOOL)
+			if (AST_getSymbolType(temp->token->text) == BOOL_VAR)
 				Emitter_emit(" == 0 ? 0 : 1");
 			Emitter_emitLine(";");
 			break;
@@ -512,12 +540,20 @@ void AST_statement(ASTNode *statement) {
 		// statement.children = List(IDENT)
 		case INPUT:
 			temp = (ASTNode *) List_shift(statement->children);
-			Emitter_emit("if(0 == scanf(\"%");
 			TokenType symType = AST_getSymbolType(temp->token->text); 
+			if (symType == STRING_VAR) {
+				Emitter_emit("getline(&");
+				Emitter_emit(temp->token->text);
+				Emitter_emitLine(", &len, stdin);");
+				break;
+			}
+
+			Emitter_emit("if(0 == scanf(\"%");
 			if (symType == INT_VAR || symType == BOOL_VAR)
 				Emitter_emit("d\", &");
-			else
+			else  // FLOAT_VAR
 				Emitter_emit("f\", &");
+
 			Emitter_emit(temp->token->text);
 			Emitter_emitLine(")) {");
 			Emitter_emit(temp->token->text);
@@ -525,6 +561,12 @@ void AST_statement(ASTNode *statement) {
 			Emitter_emit("scanf(\"%");
 			Emitter_emitLine("*s\");");
 			Emitter_emitLine("}");
+			if (AST_getSymbolType(temp->token->text) == BOOL_VAR) {
+				Emitter_emit(temp->token->text);
+				Emitter_emit(" = ");
+				Emitter_emit(temp->token->text);
+				Emitter_emitLine(" == 0 ? 0 : 1;");
+			}
 			break;
 
 		default:
