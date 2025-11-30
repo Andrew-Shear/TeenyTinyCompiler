@@ -12,6 +12,7 @@ typedef struct ASTNode {
 	Token *token;
 	List *children;
 	TokenType subType;
+	int lineNumber;
 } ASTNode;
 
 typedef struct AST {
@@ -21,6 +22,7 @@ typedef struct AST {
 	List *labelsGotoed;
 	Lexer *lex;
 	int seenStrInput;
+	int currentLineNumber;
 } AST;
 
 

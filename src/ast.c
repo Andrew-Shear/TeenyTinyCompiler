@@ -45,6 +45,7 @@ AST *AST_create(Lexer *lex) {
 
 	ast->lex = lex;
 	ast->seenStrInput = 0;
+	ast->currentLineNumber = 0;
 
 	astGlobal = ast;
 	return ast;
@@ -60,11 +61,12 @@ ASTNode *ASTNode_create(Token *t) {
 	astNode->token = Token_copy(t);
 	astNode->children = List_create();
 	astNode->subType = eOF;
+	astNode->lineNumber = astGlobal->lex->lineNumber;
 	return astNode;
 }
 
 void AST_abort(const char *message) {
-	printf("ERROR AT LINE #%d:\n", astGlobal->lex->lineNumber);
+	printf("ERROR AT LINE #%d:\n", astGlobal->currentLineNumber);
 	printf("%s\n", message);
 	exit(1);
 }
@@ -97,6 +99,7 @@ void AST_check(AST *ast) {
 }
 
 void AST_checkStatement(ASTNode *statement) {
+	astGlobal->currentLineNumber = statement->lineNumber;
 	switch (statement->token->type) {
 		ListNode *current;
 		ASTNode *temp;

@@ -28,7 +28,7 @@ PRINT str
 
 
 PRINT "Testing expressions..."
-LET x = 5 + 5
+LET x = 5 + 3
 LET y = 5 + 5
 PRINT "5 + 5:"
 PRINT 5 + 5
