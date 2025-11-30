@@ -307,8 +307,14 @@ ASTNode *Parser_input(Parser *par) {
 	return statement;
 }
 
-// comparison ::= expression {("==" | "!=" | ">" | ">=" | "<" | "<=") expression}
+// comparison ::= "TRUE" | "FALSE" | (expression {("==" | "!=" | ">" | ">=" | "<" | "<=") expression})
 ASTNode *Parser_comparison(Parser *par) {
+	if (par->curToken->type == TRUE || par->curToken->type == FALSE) {
+		ASTNode *boolean = ASTNode_create(par->curToken);
+		Parser_nextToken(par);
+		return boolean;
+	}
+
 	ASTNode *expression = Parser_expression(par);
 	ASTNode *comparison;
 

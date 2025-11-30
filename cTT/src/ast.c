@@ -192,7 +192,12 @@ void AST_checkStatement(ASTNode *statement) {
 
 TokenType AST_checkComparison(ASTNode *comparison) {
 	if (!AST_isComparisonOperator(comparison->token->type)) {
-		// it's not a comparison, it's just an expression.
+		// it's not a comparison, it's either TRUE, FALSE, or an expression.
+		if (comparison->token->type == TRUE || comparison->token->type == FALSE) {
+			comparison->subType = BOOL_VAR;
+			return BOOL_VAR;
+		}
+
 		return AST_checkExpression(comparison);
 	}
 	ASTNode *child1 = (ASTNode *) comparison->children->first->value;
@@ -401,15 +406,23 @@ void AST_statement(ASTNode *statement) {
 		// statement.children = List(comparison)
 		case PRINT:
 			temp = (ASTNode *) (List_pop(statement->children));
-			Emitter_emit("printf(\"%");
-			if (temp->subType == INT_VAR || temp->subType == BOOL_VAR) {
-				Emitter_emit("d\\n\", (");
-			} else if (temp->subType == STRING_VAR) {
-				Emitter_emit("s\\n\", (");
-			} else {
-				Emitter_emit(".2f\\n\", (");
+
+			if (temp->subType == BOOL_VAR) {
+				Emitter_emit("printf((");
+				AST_comparison(temp);	
+				Emitter_emit(") == 0 ? \"FALSE\\n\" : \"TRUE\\n\");");
+				break;
 			}
+
+			Emitter_emit("printf(\"%");
+			if (temp->subType == INT_VAR)
+				Emitter_emit("d\\n\", (");
+			else if (temp->subType == STRING_VAR)
+				Emitter_emit("s\\n\", (");
+			else
+				Emitter_emit(".2f\\n\", (");
 			AST_comparison(temp);
+
 			Emitter_emitLine("));");
 			break;
 			
@@ -594,7 +607,13 @@ int AST_isComparisonOperator(TokenType t) {
 //  	comparison ::= comparison.children = ()
 void AST_comparison(ASTNode *comparison) {
 	if (!AST_isComparisonOperator(comparison->token->type)) {
-		AST_expression(comparison);
+		// could be TRUE or FALSE
+		if (comparison->token->type == TRUE)
+			Emitter_emit("1");
+		else if (comparison->token->type == FALSE)
+			Emitter_emit("0");
+		else
+			AST_expression(comparison);
 		return;
 	}
 

@@ -1,7 +1,14 @@
 LET INT x = 3
 LET FLOAT y = 3.0
-LET BOOL z = 2 > 1
+LET BOOL z = TRUE
 LET STRING str = "Wow!"
+
+PRINT "z:"
+PRINT z
+LET z = FALSE
+PRINT "z:"
+PRINT z
+
 
 PRINT "str:"
 PRINT str

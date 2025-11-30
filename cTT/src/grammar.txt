@@ -8,7 +8,7 @@ label      ::= "LABEL" ident nl
 goto       ::= "GOTO" ident nl
 let        ::= "LET" variable ident "=" comparison nl
 input      ::= "INPUT" variable ident nl
-comparison ::= expression {("==" | "!=" | ">" | ">=" | "<" | "<=") expression}
+comparison ::= "TRUE" | "FALSE" | (expression {("==" | "!=" | ">" | ">=" | "<" | "<=") expression})
 expression ::= ["("] term [( "-" | "+" ) expression] [")"]
 term       ::= unary {( "/" | "*" ) unary}
 unary      ::= ["+" | "-"] primary
@@ -28,10 +28,9 @@ label      ::= statement.children = IDENT
 goto       ::= statement.children = IDENT
 let        ::= statement.children = IDENT, expression
 input      ::= statement.children = IDENT
-comparison ::= comparison.children = ()
 
 //  if comparison->token->text is a comparison operator:
-comparison ::= comparison.children = comparison | expression, comparison | expression
+comparison ::= comparison.children = (comparison | expression, comparison | expression)
 // 	else:
 comparison ::= comparison.children = ()
 

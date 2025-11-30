@@ -1,6 +1,8 @@
 #ifndef LEX_H
 #define LEX_H
 
+#include <stdio.h>
+
 struct Lexer;
 typedef struct Lexer {
 	FILE *source;
@@ -9,7 +11,6 @@ typedef struct Lexer {
 	int lineNumber;
 } Lexer;
 
-enum TokenType;
 typedef enum TokenType {
 	eOF = -1,
 	NEWLINE = 0,
@@ -36,6 +37,8 @@ typedef enum TokenType {
 	INT = 117,
 	FLOAT = 118,
 	BOOL = 119,
+	TRUE = 120,
+	FALSE = 121,
 	EQ = 201,
 	PLUS = 202,
 	MINUS = 203,
@@ -85,7 +88,9 @@ const static struct {
 	{INT_VAR, "INT"},
 	{FLOAT_VAR, "FLOAT"},
 	{BOOL_VAR, "BOOL"},
-	{STRING_VAR, "STRING"}
+	{STRING_VAR, "STRING"},
+	{TRUE, "TRUE"},
+	{FALSE, "FALSE"}
 };
 
 Lexer *Lexer_create(FILE *source);
