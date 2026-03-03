@@ -4,6 +4,8 @@
 #define HEADER_NAME ".header"
 #define CODE_NAME ".code"
 
+#include <stdio.h>
+
 typedef struct Emitter {
 	char *fullPath;
 	FILE *header;
