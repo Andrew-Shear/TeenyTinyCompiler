@@ -264,7 +264,7 @@ void Lexer_readSymbol(Lexer *lex, Token *t) {
 }
 
 TokenType Lexer_getKeyword(char *text) {
-	int i;
+	uint i;
 	for (i = 0; i < sizeof(keywordConversion)/sizeof(keywordConversion[0]); i++) {
 		if (!strcmp(text, keywordConversion[i].str))
 			return keywordConversion[i].val;

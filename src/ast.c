@@ -84,9 +84,11 @@ void ASTNode_kill(ASTNode *node) {
 		return;
 	if (node->token != NULL) {
 		Token_kill(node->token);
+        node->token = NULL;
 	}
 	LIST_FOREACH(node->children, first, next, cur) {
 		ASTNode_kill((ASTNode *) cur->value);
+        cur->value = NULL;
 	}
 	List_destroy(node->children);
 	free(node);
@@ -385,6 +387,7 @@ void AST_kill(AST *ast) {
 	}
 	LIST_FOREACH(ast->children, first, next, cur) {
 		ASTNode_kill((ASTNode *) cur->value);
+        cur->value = NULL;
 	}
 	AST_killSymbols(ast);
 	List_destroy(ast->symbols);
@@ -397,6 +400,7 @@ void AST_kill(AST *ast) {
 void AST_killSymbols(AST *ast) {
 	LIST_FOREACH(ast->symbols, first, next, cur) {
 		Symbol_kill((Symbol *) cur->value);
+        cur->value = NULL;
 	}
 
 }
@@ -502,6 +506,7 @@ void AST_statement(ASTNode *statement) {
 			Emitter_emit(temp->token->text);
 			Emitter_emitLine("++) {");
 			ASTNode_kill(temp2);
+            temp2 = NULL;
 
 			while (statement->children->first != NULL) {
 				temp2 = (ASTNode *) List_shift(statement->children);
@@ -588,9 +593,11 @@ void AST_statement(ASTNode *statement) {
 	}
 	if (temp != NULL) {
 		ASTNode_kill(temp);
+        temp = NULL;
 	}
 	if (temp2 != NULL) {
 		ASTNode_kill(temp2);
+        temp2 = NULL;
 	}
 
 }

@@ -22,7 +22,9 @@ void Parser_kill(Parser *par) {
 	if (par == NULL)
 		return;
 	Token_kill(par->curToken);
+    par->curToken = NULL;
 	Token_kill(par->peekToken);
+    par->peekToken = NULL;
 	free(par);
 }
 

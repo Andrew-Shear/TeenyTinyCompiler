@@ -65,7 +65,7 @@ typedef struct Token {
 	TokenType type;
 } Token;
 
-const static struct {
+static const struct {
 	TokenType val;
 	const char *str;
 } keywordConversion [] = {

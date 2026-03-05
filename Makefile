@@ -1,4 +1,4 @@
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -Wextra
 CC = gcc
 
 TEENYS = $(wildcard ./*.teeny, examples/*.teeny)
@@ -8,7 +8,7 @@ TEENYS = $(wildcard ./*.teeny, examples/*.teeny)
 all: $(TEENYS)
 
 compile:
-		$(CC) src/teenytiny.c src/parse.c src/lex.c src/emit.c src/list.c src/ast.c -o src/teenytiny
+		$(CC) $(CFLAGS) src/teenytiny.c src/parse.c src/lex.c src/emit.c src/list.c src/ast.c -o src/teenytiny
 
 $(TEENYS):
 		@src/teenytiny $@
