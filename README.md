@@ -2,9 +2,9 @@ Inspired by Austin Z. Henley's "Let's make a Teeny Tiny compiler" project. I ini
 
 The grammar for this language is very simple, as it has very few features, but it will be updated as the featureset grows. Example programs can be found in the `examples` directory, with example.teeny displaying the particulars of how types are handled.
 
-To run:
+To run (run in main directory):
 
-`make all` -- compiles all .teeny files in examples or in the main folder.
+`make all` -- compiles all .teeny files in /examples or in the main folder.
 
 Then all .teeny files will be executables. Enjoy!
 
