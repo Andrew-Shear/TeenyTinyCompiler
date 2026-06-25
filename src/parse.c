@@ -432,7 +432,7 @@ ASTNode *Parser_unary(Parser *par) {
 ASTNode *Parser_primary(Parser *par) {
 	ASTNode *primary = ASTNode_create(par->curToken);
 
-	if (par->curToken->type == NUMBERINT || NUMBERFLOAT || par->curToken->type == STRING) {
+	if (par->curToken->type == NUMBERINT || par->curToken->type == NUMBERFLOAT || par->curToken->type == STRING) {
 		Parser_nextToken(par);
 	} else if (par->curToken->type == IDENT) {
 		if (!(AST_seenSymbol(par->ast, par->curToken->text))) {

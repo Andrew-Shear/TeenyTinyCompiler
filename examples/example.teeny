@@ -64,7 +64,10 @@ PRINT ""
 PRINT "Testing comparisons..."
 LET x = 3
 LET y = 6
-PRINT z
+PRINT "x:"
+PRINT x
+PRINT "y:"
+PRINT y
 
 IF x == x THEN
 	PRINT "x == x"
